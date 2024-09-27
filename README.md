@@ -76,10 +76,10 @@ Set the following variables in `terraform_config.sh`:
 These variables are configured on the server via `server_config.sh` and can be modified to customize the server's behavior, including backup configurations, email alerts, and logging.
 - **`SYNAPSE_SERVER_DOMAIN_NAME`**: The domain name of the Matrix Synapse server. This will be used for server identification, SSL configuration, and federation with other Matrix servers.
   
-- **AWS S3 Backup Settings**:
-  - **`AWS_ACCESS_KEY_ID`**: Your AWS access key for authentication when interacting with S3 for backups. For set up instructions see [Setting up AWS S3](#setting-up-aws-s3) section.
-  - **`AWS_SECRET_ACCESS_KEY`**: Your AWS secret access key for secure access to S3. For set up instructions see [Setting up AWS S3](#setting-up-aws-s3) section.
-  - **`AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME`**: The name of the S3 bucket where Synapse backups will be stored. For set up instructions see [Setting up AWS S3](#setting-up-aws-s3) section.
+- **AWS S3 Backup Settings**: For set up instructions see [Setting up AWS S3](#setting-up-aws-s3)
+  - **`AWS_ACCESS_KEY_ID`**: Your AWS access key for authentication when interacting with S3 for backups. 
+  - **`AWS_SECRET_ACCESS_KEY`**: Your AWS secret access key for secure access to S3. 
+  - **`AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME`**: The name of the S3 bucket where Synapse backups will be stored. 
 - **Data Retention Settings**:
   - **`KEEP_HISTORY_FOREVER`**: Set this to `true` if you want to retain all message history and media files indefinitely. Set it to `false` to enable the server’s retention policies, which will periodically clean up old messages and media.
 - **Email Alert Settings**:
