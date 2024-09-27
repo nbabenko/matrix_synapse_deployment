@@ -11,8 +11,6 @@ export KEEP_HISTORY_FOREVER=true  # Set to false if you do not want to keep hist
 
 # Email settings to notify in case of errors
 export ALERT_EMAIL="your_email@example.com"  # Replace with your email
-export EMAIL_SUBJECT="Matrix Synapse Backup Failed"
-export EMAIL_BODY="The Matrix Synapse backup script encountered an error and failed to complete."
 export EMAIL_FROM="no-reply@yourdomain.com"  # Replace with a valid email address
 export EMAIL_PASSWORD="password"
 export MAILHUB="smtp.gmail.com:587"

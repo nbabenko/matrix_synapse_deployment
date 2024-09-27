@@ -69,15 +69,26 @@ Set the following variables in `terraform_config.sh`:
 - `TF_VAR_threefold_account_memo`: ThreeFold account mnemonic.
 
 #### Server-Side Variables:
-These variables are configured on the server itself via `server_config.sh` and can be modified for server-specific settings:
+These variables are configured on the server via `server_config.sh` and can be modified to customize the server's behavior, including backup configurations, email alerts, and logging.
 
-- `SYNAPSE_SERVER_DOMAIN_NAME`: The domain name of the Matrix Synapse server.
-- `AWS_ACCESS_KEY_ID`: AWS access key for S3 backup.
-- `AWS_SECRET_ACCESS_KEY`: AWS secret access key for S3 backup.
-- `AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME`: Name of the S3 bucket where backups are stored.
-- `ALERT_EMAIL`: Email address to send alerts in case of backup or disk space issues.
-- `KEEP_HISTORY_FOREVER`: Set to `true` to keep message history and media files indefinitely, or `false` to enable retention policies.
-- `LOG_FILE`: Path to the log file where backup errors will be recorded.
+- **`SYNAPSE_SERVER_DOMAIN_NAME`**: The domain name of the Matrix Synapse server. This will be used for server identification, SSL configuration, and federation with other Matrix servers.
+  
+- **AWS S3 Backup Settings**:
+  - **`AWS_ACCESS_KEY_ID`**: Your AWS access key for authentication when interacting with S3 for backups.
+  - **`AWS_SECRET_ACCESS_KEY`**: Your AWS secret access key for secure access to S3.
+  - **`AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME`**: The name of the S3 bucket where Synapse backups will be stored.
+
+- **Data Retention Settings**:
+  - **`KEEP_HISTORY_FOREVER`**: Set this to `true` if you want to retain all message history and media files indefinitely. Set it to `false` to enable the server’s retention policies, which will periodically clean up old messages and media.
+
+- **Email Alert Settings**:
+  - **`ALERT_EMAIL`**: The recipient email address for backup failure or disk space alerts.
+  - **`EMAIL_FROM`**: The sender email address that will be used for sending these alert emails.
+  - **`EMAIL_PASSWORD`**: The password for the `EMAIL_FROM` account. If you’re using Gmail, you must use an [App Password](https://support.google.com/accounts/answer/185833?hl=en).
+  - **`MAILHUB`**: The SMTP server address for sending email notifications (e.g., `smtp.gmail.com:587` for Gmail).
+
+- **Logging Settings**:
+  - **`LOG_FILE`**: The path to the log file where backup errors and other operational logs will be recorded. This file will help diagnose issues with backups or the system.
 
 ### 3. Initialize and Apply Terraform
 Initialize Terraform and apply the configuration to deploy the VM:
