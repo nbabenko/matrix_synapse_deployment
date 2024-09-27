@@ -101,17 +101,6 @@ terraform apply
 
 Terraform will provision a new VM on the ThreeFold Grid. After the deployment is successful, it will output the VM’s IP address.
 
-### 4. SSH into the VM and Configure Matrix Synapse
-SSH into the VM using the provided IP address and run the setup script to configure Matrix Synapse:
-
-```bash
-ssh -i ~/.ssh/id_rsa root@<vm_ip_address>
-cd /matrix-synapse
-bash setup_matrix.sh
-```
-
-This will install Docker, configure Matrix Synapse, and set up SSL, NGINX, and email notifications.
-
 ---
 
 ## Synapse Configuration
@@ -123,6 +112,12 @@ After running the `setup_matrix.sh` script, Matrix Synapse will be configured au
 - **Retention Policies**: Based on your configuration (`KEEP_HISTORY_FOREVER`), the server will either keep message history and media files indefinitely or follow the retention policies you configure.
 
 For detailed configuration options and additional customization, refer to the official [Matrix Synapse Documentation](https://matrix-org.github.io/synapse/latest/setup/installation.html).
+
+### SSH into the VM and Configure Matrix Synapse further
+SSH into the VM using the provided IP address and run the setup script to configure Matrix Synapse if you need any changes:
+```bash
+ssh root@<vm_ip_address>
+```
 
 ---
 
