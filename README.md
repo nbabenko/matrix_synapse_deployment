@@ -72,7 +72,35 @@ Set the following variables in `terraform_config.sh`:
 - `TF_VAR_ssl_certificate_ca_bundle_path`: Path to the CA bundle file.
 - `TF_VAR_threefold_account_memo`: ThreeFold account mnemonic.
 
-Here’s an improved version of the **Setting up AWS S3** section with better explanations, formatting, and examples:
+#### Server-Side Variables:
+These variables are configured on the server via `server_config.sh` and can be modified to customize the server's behavior, including backup configurations, email alerts, and logging.
+- **`SYNAPSE_SERVER_DOMAIN_NAME`**: The domain name of the Matrix Synapse server. This will be used for server identification, SSL configuration, and federation with other Matrix servers.
+  
+- **AWS S3 Backup Settings**:
+  - **`AWS_ACCESS_KEY_ID`**: Your AWS access key for authentication when interacting with S3 for backups. For set up instructions see [Setting up AWS S3](#setting-up-aws-s3) section.
+  - **`AWS_SECRET_ACCESS_KEY`**: Your AWS secret access key for secure access to S3. For set up instructions see [Setting up AWS S3](#setting-up-aws-s3) section.
+  - **`AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME`**: The name of the S3 bucket where Synapse backups will be stored. For set up instructions see [Setting up AWS S3](#setting-up-aws-s3) section.
+- **Data Retention Settings**:
+  - **`KEEP_HISTORY_FOREVER`**: Set this to `true` if you want to retain all message history and media files indefinitely. Set it to `false` to enable the server’s retention policies, which will periodically clean up old messages and media.
+- **Email Alert Settings**:
+  - **`ALERT_EMAIL`**: The recipient email address for backup failure or disk space alerts.
+  - **`EMAIL_FROM`**: The sender email address that will be used for sending these alert emails.
+  - **`EMAIL_PASSWORD`**: The password for the `EMAIL_FROM` account. If you’re using Gmail, you must use an [App Password](https://support.google.com/accounts/answer/185833?hl=en).
+  - **`MAILHUB`**: The SMTP server address for sending email notifications (e.g., `smtp.gmail.com:587` for Gmail).
+
+- **Logging Settings**:
+  - **`LOG_FILE`**: The path to the log file where backup errors and other operational logs will be recorded. This file will help diagnose issues with backups or the system.
+
+### 3. Initialize and Apply Terraform
+Initialize Terraform and apply the configuration to deploy the VM:
+
+```bash
+source terraform_config.sh
+terraform init
+terraform apply
+```
+
+Terraform will provision a new VM on the ThreeFold Grid. After the deployment is successful, it will output the VM’s IP address.
 
 ---
 
@@ -155,7 +183,7 @@ Next, configure the bucket permissions to allow access from your IAM user.
 3. Apply and save the bucket policy.
 
 ### Step 5: Configure AWS Credentials on Your Server
-After generating the access keys, configure them on your server in the `server_config.sh` file:
+After generating the access keys, configure them on your server in the `server_config.sh` file. See :
 
 ```bash
 export AWS_ACCESS_KEY_ID="your-aws-access-key"
@@ -186,6 +214,21 @@ SSH into the VM using the provided IP address and run the setup script to config
 ```bash
 ssh root@<vm_ip_address>
 ```
+
+---
+
+## User Registration
+By default, this Matrix Synapse server does **not** allow open registration to new users via the web interface for security reasons. If you want to register new users, you must do so via the command line.
+### Register a New User via Command Line
+To register a new user, SSH into the VM and run the following command:
+```bash
+docker exec -it synapse register_new_matrix_user http://localhost:8008 -c /data/homeserver.yaml
+```
+You will be prompted to provide:
+1. **Username**: The desired username for the new user.
+2. **Password**: The password for the new user.
+3. **Admin Rights**: Whether or not the user should have admin rights on the server.
+For more detailed instructions on user registration, refer to the official documentation: [Registering Users in Synapse](https://matrix-org.github.io/synapse/latest/usage/administration/admin_api/user_admin_api.html).
 
 ---
 
