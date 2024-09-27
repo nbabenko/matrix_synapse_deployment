@@ -46,6 +46,10 @@ mkdir -p /matrix-synapse/data
 echo "Generating Synapse configuration..."
 docker run --rm -v /matrix-synapse/data:/data -e SYNAPSE_SERVER_NAME=${SYNAPSE_SERVER_DOMAIN_NAME} -e SYNAPSE_REPORT_STATS=yes matrixdotorg/synapse:latest generate
 
+# Add the public_baseurl to the homeserver.yaml after the server_name line
+echo "Adding public_baseurl configuration..."
+sed -i "/^server_name:/a\public_baseurl: \"https://$SYNAPSE_SERVER_DOMAIN_NAME/\"" /matrix-synapse/data/homeserver.yaml
+
 # Add bind_addresses to port 8008 listener for HTTP binding
 echo "Adding bind_addresses to port 8008 listener for HTTP binding..."
 sed -i '/port: 8008/a \    bind_addresses: ["0.0.0.0"]' /matrix-synapse/data/homeserver.yaml
