@@ -10,7 +10,7 @@ This project provides a deployment solution for Matrix Synapse using **Terraform
 - [Synapse Configuration](#synapse-configuration)
 - [User Registration](#user-registration)
 - [Backup & Restore](#backup--restore)
-- [Verification and Testing](#verification-and-testing)   <!-- Added this section -->
+- [Verification and Testing](#verification-and-testing) 
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
