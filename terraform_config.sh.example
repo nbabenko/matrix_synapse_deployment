@@ -1,11 +1,40 @@
-export TF_VAR_node_id=317  # Replace with actual node ID
-export TF_VAR_vm_name="matrix_synapse_vm" #only letters, numbers and _
-export TF_VAR_cpu=1
-export TF_VAR_memory=2048 # MB
-export TF_VAR_storage=51200 # MB
-export TF_VAR_ssh_private_key_to_use="~/.ssh/id_rsa"
-export TF_VAR_ssh_public_key_to_use="~/.ssh/id_rsa.pub"
-export TF_VAR_ssl_certificate_key_path="path to .key ssl certificate file"
-export TF_VAR_ssl_certificate_crt_path="path to .crt ssl certificate file"
-export TF_VAR_ssl_certificate_ca_bundle_path="path to the .ca-bundle ssl certificate file"
-export TF_VAR_threefold_account_memo="your 12 words threefold account memo"
+#!/bin/bash
+
+# ===================================================
+# Terraform Configuration for Matrix Synapse Deployment
+# This script exports the required Terraform variables 
+# used for deploying the Matrix Synapse server on the 
+# ThreeFold Grid.
+# ===================================================
+
+# --- ThreeFold Grid Node Configuration ---
+export TF_VAR_node_id=317                    # Replace with the actual node ID on the ThreeFold Grid where the VM will be deployed
+
+# --- VM Configuration ---
+export TF_VAR_vm_name="matrix_synapse_vm"    # Name of the VM (use only letters, numbers, and underscores)
+export TF_VAR_cpu=1                          # Number of CPU cores to allocate to the VM
+export TF_VAR_memory=2048                    # Amount of memory (in MB) to allocate to the VM
+export TF_VAR_storage=51200                  # Storage size (in MB) to allocate to the VM
+
+# --- SSH Configuration ---
+export TF_VAR_ssh_private_key_to_use="~/.ssh/id_rsa"    # Path to your SSH private key (ensure this key has proper access)
+export TF_VAR_ssh_public_key_to_use="~/.ssh/id_rsa.pub" # Path to your SSH public key (used for remote access to the VM)
+
+# --- SSL Certificate Configuration ---
+export TF_VAR_ssl_certificate_key_path="path/to/your/ssl-certificate.key"    # Path to the SSL certificate key file (for HTTPS configuration)
+export TF_VAR_ssl_certificate_crt_path="path/to/your/ssl-certificate.crt"    # Path to the SSL certificate file (the public cert for HTTPS)
+export TF_VAR_ssl_certificate_ca_bundle_path="path/to/your/ca-bundle.ca-bundle"  # Path to the CA bundle file (chain of trusted certificate authorities)
+
+# --- ThreeFold Account Configuration ---
+export TF_VAR_threefold_account_memo="your 12-word threefold account memo"  # Your 12-word mnemonic for accessing the ThreeFold account
+
+# --- Security Note ---
+# Ensure this file is not committed to version control or shared publicly as it contains sensitive credentials.
+# Use .gitignore to exclude this file from being tracked in Git.
+
+# --- How to use this file ---
+# 1. Make a copy of this example file to create your configuration.
+# 2. Edit the new file and replace the placeholders with your actual information (e.g., domain name, paths, AWS credentials).
+# 3. Rename the file by removing the ".example" extension.
+# 4. Load the configuration:
+#    source terraform_config.sh

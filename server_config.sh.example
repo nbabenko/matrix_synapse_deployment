@@ -1,18 +1,38 @@
 #!/bin/bash
 
-# Secrets and configuration variables
-export SYNAPSE_SERVER_DOMAIN_NAME="your domain name"
-# AWS backup account access key
-export AWS_ACCESS_KEY_ID="your access key"
-# AWS backup account secret access key
-export AWS_SECRET_ACCESS_KEY="your secret key"
-export AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME="your bucket name"
-export KEEP_HISTORY_FOREVER=true  # Set to false if you do not want to keep history forever
+# ===================================================
+# Matrix Synapse Server Configuration
+# Secrets and configuration variables for backups, 
+# email notifications, and logging
+# ===================================================
 
-# Email settings to notify in case of errors
-export ALERT_EMAIL="your_email@example.com"  # Replace with your email
-export EMAIL_FROM="no-reply@yourdomain.com"  # Replace with a valid email address
-export EMAIL_PASSWORD="password"
-export MAILHUB="smtp.gmail.com:587"
+# --- Server Domain ---
+export SYNAPSE_SERVER_DOMAIN_NAME="your-domain.com"   # Replace with your actual Matrix Synapse server domain
 
-export LOG_FILE="/tmp/matrix_synapse_backup_error.log"
+# --- AWS S3 Backup Configuration ---
+export AWS_ACCESS_KEY_ID="your-aws-access-key"        # AWS access key for authenticating S3 backups
+export AWS_SECRET_ACCESS_KEY="your-aws-secret-key"    # AWS secret key for securing S3 access
+export AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME="your-bucket-name"  # S3 bucket where backups will be stored
+
+# --- Data Retention Configuration ---
+export KEEP_HISTORY_FOREVER=true                      # Set to 'false' if you want to enable data retention policies for purging old messages/media
+
+# --- Email Notification Settings ---
+export ALERT_EMAIL="your-email@example.com"           # The email address to receive error or alert notifications
+export EMAIL_FROM="no-reply@your-domain.com"          # The sender email address (ensure it's valid and configured with your mail provider)
+export EMAIL_PASSWORD="your-email-password"           # Password or app-specific password for the email account (use Gmail app passwords if applicable)
+export MAILHUB="smtp.gmail.com:587"                   # SMTP server for email sending (Gmail example provided)
+
+# --- Log File Location ---
+export LOG_FILE="/tmp/matrix_synapse_backup_error.log"  # Path to the log file for backup error logging
+
+# --- Security Note ---
+# Ensure this file is not tracked by Git or made public, as it contains sensitive credentials.
+# You can use .gitignore to prevent committing this file.
+
+# --- How to use this file ---
+# 1. Make a copy of this example file to create your configuration.
+# 2. Edit the new file and replace the placeholders with your actual information (e.g., domain name, paths, AWS credentials).
+# 3. Rename the file by removing the ".example" extension.
+# 4. Load the configuration:
+#    source terraform_config.sh
