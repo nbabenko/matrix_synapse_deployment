@@ -1,7 +1,3 @@
-Here's an updated version of your **README.md**, including instructions on setting up an AWS S3 account, creating access keys, and configuring permissions for backups:
-
----
-
 # Matrix Synapse Deployment with Terraform and ThreeFold Grid
 
 This project provides a deployment solution for Matrix Synapse using **Terraform** and the **ThreeFold Grid** for VM provisioning. The solution automates the setup of a Matrix Synapse server and includes automated backup and restore functionalities via AWS S3.
@@ -14,6 +10,7 @@ This project provides a deployment solution for Matrix Synapse using **Terraform
 - [Synapse Configuration](#synapse-configuration)
 - [User Registration](#user-registration)
 - [Backup & Restore](#backup--restore)
+- [Verification and Testing](#verification-and-testing)   <!-- Added this section -->
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
@@ -195,7 +192,9 @@ This will allow your Matrix Synapse server to interact with your S3 bucket for b
 
 For more details on using AWS S3, refer to the [AWS S3 Getting Started Guide](https://aws.amazon.com/s3/getting-started/).
 
-## Synapse Configuration
+##
+
+ Synapse Configuration
 
 After running the `terraform apply` command, Matrix Synapse will be automatically configured with the following key components:
 
@@ -250,6 +249,54 @@ bash restore_from_backup.sh
 ```
 
 This script will stop the Matrix Synapse service, download the latest backup from S3, restore the data and SQLite database, and restart the Synapse server.
+
+---
+
+## Verification and Testing
+
+### Verify Synapse Version Using `curl`
+
+To check if the Synapse server is running and determine its version, use the following `curl` command from your command line:
+
+```bash
+curl -X GET http://localhost:8008/_matrix/client/versions
+```
+
+A successful response should return a JSON object with the supported versions of the Matrix protocol.
+
+Example response:
+```json
+{
+  "versions": ["r0.0.1", "r0.1.0", "r0.2.0"],
+  "unstable_features": {
+    "m.lazy_load_members": true,
+    "m.require_identity_server": false
+  }
+}
+```
+
+### Verify Server Federation Status
+
+Use the [Matrix Federation Tester](https://federationtester.matrix.org/) to check if your Synapse server can federate with other Matrix servers.
+
+1. Visit the Federation Tester website.
+2. Enter your server's domain (e.g., `matrix.example.com`).
+3. Click **Go!** to run the test.
+
+The tool will show if your server is publicly accessible and whether it can federate properly with other servers.
+
+### Login via a Matrix Client
+
+Test logging into the Matrix Synapse server using any Matrix client like:
+
+- **Element**
+- **FluffyChat**
+- **Quaternion**
+
+1. Open the Matrix client.
+2. Enter the server’s custom homeserver URL (e.g., `https://matrix.example.com`).
+3. Use the credentials for a user created via the command line.
+4. Ensure that you can log in, send, and receive messages.
 
 ---
 
