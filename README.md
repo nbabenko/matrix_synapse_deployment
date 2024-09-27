@@ -1,3 +1,6 @@
+Here's an updated version of your **README.md**, including instructions on setting up an AWS S3 account, creating access keys, and configuring permissions for backups:
+
+---
 
 # Matrix Synapse Deployment with Terraform and ThreeFold Grid
 
@@ -7,6 +10,7 @@ This project provides a deployment solution for Matrix Synapse using **Terraform
 - [Prerequisites](#prerequisites)
 - [Project Structure](#project-structure)
 - [Setup Instructions](#setup-instructions)
+- [Setting up AWS S3](#setting-up-aws-s3)
 - [Synapse Configuration](#synapse-configuration)
 - [User Registration](#user-registration)
 - [Backup & Restore](#backup--restore)
@@ -68,40 +72,100 @@ Set the following variables in `terraform_config.sh`:
 - `TF_VAR_ssl_certificate_ca_bundle_path`: Path to the CA bundle file.
 - `TF_VAR_threefold_account_memo`: ThreeFold account mnemonic.
 
-#### Server-Side Variables:
-These variables are configured on the server via `server_config.sh` and can be modified to customize the server's behavior, including backup configurations, email alerts, and logging.
-
-- **`SYNAPSE_SERVER_DOMAIN_NAME`**: The domain name of the Matrix Synapse server. This will be used for server identification, SSL configuration, and federation with other Matrix servers.
-  
-- **AWS S3 Backup Settings**:
-  - **`AWS_ACCESS_KEY_ID`**: Your AWS access key for authentication when interacting with S3 for backups.
-  - **`AWS_SECRET_ACCESS_KEY`**: Your AWS secret access key for secure access to S3.
-  - **`AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME`**: The name of the S3 bucket where Synapse backups will be stored.
-
-- **Data Retention Settings**:
-  - **`KEEP_HISTORY_FOREVER`**: Set this to `true` if you want to retain all message history and media files indefinitely. Set it to `false` to enable the server’s retention policies, which will periodically clean up old messages and media.
-
-- **Email Alert Settings**:
-  - **`ALERT_EMAIL`**: The recipient email address for backup failure or disk space alerts.
-  - **`EMAIL_FROM`**: The sender email address that will be used for sending these alert emails.
-  - **`EMAIL_PASSWORD`**: The password for the `EMAIL_FROM` account. If you’re using Gmail, you must use an [App Password](https://support.google.com/accounts/answer/185833?hl=en).
-  - **`MAILHUB`**: The SMTP server address for sending email notifications (e.g., `smtp.gmail.com:587` for Gmail).
-
-- **Logging Settings**:
-  - **`LOG_FILE`**: The path to the log file where backup errors and other operational logs will be recorded. This file will help diagnose issues with backups or the system.
-
-### 3. Initialize and Apply Terraform
-Initialize Terraform and apply the configuration to deploy the VM:
-
-```bash
-source terraform_config.sh
-terraform init
-terraform apply
-```
-
-Terraform will provision a new VM on the ThreeFold Grid. After the deployment is successful, it will output the VM’s IP address.
+Here’s an improved version of the **Setting up AWS S3** section with better explanations, formatting, and examples:
 
 ---
+
+## Setting up AWS S3
+
+To use AWS S3 for backups, you will need to create an AWS account, set up an S3 bucket, generate access keys, and configure the necessary permissions.
+
+### Step 1: Sign Up for an AWS Account
+If you don’t have an AWS account, you can [sign up here](https://aws.amazon.com/free/). AWS offers a Free Tier that includes 5GB of S3 storage, which is sufficient for basic backup needs.
+
+### Step 2: Create an S3 Bucket
+1. Go to the [AWS S3 Console](https://s3.console.aws.amazon.com/s3/home).
+2. Click **Create Bucket**.
+3. Provide a unique name for your bucket (e.g., `matrix-synapse-backup`) and select a region close to your server.
+4. Set the permissions to **private** to ensure your backups are secure and not publicly accessible.
+5. Click **Create** to finish the process.
+
+### Step 3: Generate AWS Access Keys
+To interact with S3 programmatically from your server, you’ll need access keys.
+
+1. Go to the **IAM Console** in AWS.
+2. Create a new user specifically for your backups (e.g., `matrix-backup-user`). Ensure **Programmatic access** is selected (no console access needed).
+3. Attach the following policy to the user, granting it access to the S3 bucket:
+   ```json
+   {
+       "Version": "2012-10-17",
+       "Statement": [
+           {
+               "Effect": "Allow",
+               "Action": [
+                   "s3:PutObject",
+                   "s3:GetObject",
+                   "s3:ListBucket",
+                   "s3:DeleteObject"
+               ],
+               "Resource": [
+                   "arn:aws:s3:::YOUR-BUCKET-NAME",
+                   "arn:aws:s3:::YOUR-BUCKET-NAME/*"
+               ]
+           }
+       ]
+   }
+   ```
+   Replace `YOUR-BUCKET-NAME` with your S3 bucket name.
+
+4. Download and securely store the **Access Key ID** and **Secret Access Key** for this user.
+
+For more detailed steps, refer to [this AWS IAM guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html).
+
+### Step 4: Set Bucket Permissions
+Next, configure the bucket permissions to allow access from your IAM user.
+
+1. In the **S3 Console**, go to your newly created bucket.
+2. Under **Permissions**, add the following bucket policy to grant your IAM user the appropriate access:
+   ```json
+   {
+       "Version": "2012-10-17",
+       "Statement": [
+           {
+               "Effect": "Allow",
+               "Principal": {
+                   "AWS": "arn:aws:iam::YOUR-AWS-ACCOUNT-ID:user/YOUR-BACKUP-USER"
+               },
+               "Action": [
+                   "s3:PutObject",
+                   "s3:GetObject",
+                   "s3:ListBucket",
+                   "s3:DeleteObject"
+               ],
+               "Resource": [
+                   "arn:aws:s3:::YOUR-BUCKET-NAME",
+                   "arn:aws:s3:::YOUR-BUCKET-NAME/*"
+               ]
+           }
+       ]
+   }
+   ```
+   Replace `YOUR-AWS-ACCOUNT-ID` with your AWS account ID and `YOUR-BUCKET-NAME` with the actual bucket name.
+
+3. Apply and save the bucket policy.
+
+### Step 5: Configure AWS Credentials on Your Server
+After generating the access keys, configure them on your server in the `server_config.sh` file:
+
+```bash
+export AWS_ACCESS_KEY_ID="your-aws-access-key"
+export AWS_SECRET_ACCESS_KEY="your-aws-secret-key"
+export AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME="your-bucket-name"
+```
+
+This will allow your Matrix Synapse server to interact with your S3 bucket for backups.
+
+For more details on using AWS S3, refer to the [AWS S3 Getting Started Guide](https://aws.amazon.com/s3/getting-started/).
 
 ## Synapse Configuration
 
@@ -122,27 +186,6 @@ SSH into the VM using the provided IP address and run the setup script to config
 ```bash
 ssh root@<vm_ip_address>
 ```
-
----
-
-## User Registration
-
-By default, this Matrix Synapse server does **not** allow open registration to new users via the web interface for security reasons. If you want to register new users, you must do so via the command line.
-
-### Register a New User via Command Line
-
-To register a new user, SSH into the VM and run the following command:
-
-```bash
-docker exec -it synapse register_new_matrix_user http://localhost:8008 -c /data/homeserver.yaml
-```
-
-You will be prompted to provide:
-1. **Username**: The desired username for the new user.
-2. **Password**: The password for the new user.
-3. **Admin Rights**: Whether or not the user should have admin rights on the server.
-
-For more detailed instructions on user registration, refer to the official documentation: [Registering Users in Synapse](https://matrix-org.github.io/synapse/latest/usage/administration/admin_api/user_admin_api.html).
 
 ---
 
