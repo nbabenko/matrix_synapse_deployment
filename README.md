@@ -1,7 +1,3 @@
-Here's an updated version of your **README.md**, including instructions on setting up an AWS S3 account, creating access keys, and configuring permissions for backups:
-
----
-
 # Matrix Synapse Deployment with Terraform and ThreeFold Grid
 
 This project provides a deployment solution for Matrix Synapse using **Terraform** and the **ThreeFold Grid** for VM provisioning. The solution automates the setup of a Matrix Synapse server and includes automated backup and restore functionalities via AWS S3.
