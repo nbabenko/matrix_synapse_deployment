@@ -1,3 +1,4 @@
+
 # Matrix Synapse Deployment with Terraform and ThreeFold Grid
 
 This project provides a deployment solution for Matrix Synapse using **Terraform** and the **ThreeFold Grid** for VM provisioning. The solution automates the setup of a Matrix Synapse server and includes automated backup and restore functionalities via AWS S3.
@@ -6,8 +7,9 @@ This project provides a deployment solution for Matrix Synapse using **Terraform
 - [Prerequisites](#prerequisites)
 - [Project Structure](#project-structure)
 - [Setup Instructions](#setup-instructions)
+- [Synapse Configuration](#synapse-configuration)
+- [User Registration](#user-registration)
 - [Backup & Restore](#backup--restore)
-- [Variables](#variables)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
@@ -51,13 +53,31 @@ cp terraform_config.sh.example terraform_config.sh
 nano terraform_config.sh
 ```
 
-Ensure to set the following values:
-- `node_id`: ID of the node in the ThreeFold grid where the VM will be deployed.
-- `vm_name`: Name for the Matrix Synapse VM.
-- `cpu`: Number of CPU cores.
-- `memory`: Amount of memory (in MB).
-- `storage`: Disk storage (in MB).
-- Paths to your SSL certificates and ThreeFold account memo.
+#### Terraform Variables (Host Machine):
+Set the following variables in `terraform_config.sh`:
+
+- `TF_VAR_node_id`: ID of the ThreeFold Grid node where the VM will be deployed.
+- `TF_VAR_vm_name`: Name for the Matrix Synapse VM.
+- `TF_VAR_cpu`: Number of CPU cores for the VM.
+- `TF_VAR_memory`: Amount of memory (in MB).
+- `TF_VAR_storage`: Disk storage (in MB).
+- `TF_VAR_ssh_private_key_to_use`: Path to the SSH private key.
+- `TF_VAR_ssh_public_key_to_use`: Path to the SSH public key.
+- `TF_VAR_ssl_certificate_key_path`: Path to the SSL certificate key.
+- `TF_VAR_ssl_certificate_crt_path`: Path to the SSL certificate.
+- `TF_VAR_ssl_certificate_ca_bundle_path`: Path to the CA bundle file.
+- `TF_VAR_threefold_account_memo`: ThreeFold account mnemonic.
+
+#### Server-Side Variables:
+These variables are configured on the server itself via `server_config.sh` and can be modified for server-specific settings:
+
+- `SYNAPSE_SERVER_DOMAIN_NAME`: The domain name of the Matrix Synapse server.
+- `AWS_ACCESS_KEY_ID`: AWS access key for S3 backup.
+- `AWS_SECRET_ACCESS_KEY`: AWS secret access key for S3 backup.
+- `AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME`: Name of the S3 bucket where backups are stored.
+- `ALERT_EMAIL`: Email address to send alerts in case of backup or disk space issues.
+- `KEEP_HISTORY_FOREVER`: Set to `true` to keep message history and media files indefinitely, or `false` to enable retention policies.
+- `LOG_FILE`: Path to the log file where backup errors will be recorded.
 
 ### 3. Initialize and Apply Terraform
 Initialize Terraform and apply the configuration to deploy the VM:
@@ -83,6 +103,39 @@ This will install Docker, configure Matrix Synapse, and set up SSL, NGINX, and e
 
 ---
 
+## Synapse Configuration
+
+After running the `setup_matrix.sh` script, Matrix Synapse will be configured automatically. The configuration includes:
+
+- **SSL Setup**: The script configures NGINX with SSL to ensure secure communication.
+- **Federation**: Matrix Synapse is set up to support federation with other servers.
+- **Retention Policies**: Based on your configuration (`KEEP_HISTORY_FOREVER`), the server will either keep message history and media files indefinitely or follow the retention policies you configure.
+
+For detailed configuration options and additional customization, refer to the official [Matrix Synapse Documentation](https://matrix-org.github.io/synapse/latest/setup/installation.html).
+
+---
+
+## User Registration
+
+By default, this Matrix Synapse server does **not** allow open registration to new users via the web interface for security reasons. If you want to register new users, you must do so via the command line.
+
+### Register a New User via Command Line
+
+To register a new user, SSH into the VM and run the following command:
+
+```bash
+docker exec -it synapse register_new_matrix_user http://localhost:8008 -c /data/homeserver.yaml
+```
+
+You will be prompted to provide:
+1. **Username**: The desired username for the new user.
+2. **Password**: The password for the new user.
+3. **Admin Rights**: Whether or not the user should have admin rights on the server.
+
+For more detailed instructions on user registration, refer to the official documentation: [Registering Users in Synapse](https://matrix-org.github.io/synapse/latest/usage/administration/admin_api/user_admin_api.html).
+
+---
+
 ## Backup & Restore
 
 ### Backup
@@ -104,37 +157,6 @@ This script will stop the Matrix Synapse service, download the latest backup fro
 
 ---
 
-## Variables
-
-### Terraform Variables (Host Machine)
-These variables are defined in `terraform_config.sh`:
-
-- `TF_VAR_node_id`: ID of the ThreeFold Grid node where the VM will be deployed.
-- `TF_VAR_vm_name`: Name for the VM.
-- `TF_VAR_cpu`: Number of CPU cores for the VM.
-- `TF_VAR_memory`: Amount of memory in MB.
-- `TF_VAR_storage`: Disk storage in MB.
-- `TF_VAR_ssh_private_key_to_use`: Path to the SSH private key.
-- `TF_VAR_ssh_public_key_to_use`: Path to the SSH public key.
-- `TF_VAR_ssl_certificate_key_path`: Path to the SSL certificate key.
-- `TF_VAR_ssl_certificate_crt_path`: Path to the SSL certificate.
-- `TF_VAR_ssl_certificate_ca_bundle_path`: Path to the CA bundle file.
-- `TF_VAR_threefold_account_memo`: ThreeFold account mnemonic.
-
-### Server-Side Variables
-These variables are configured on the server itself via `server_config.sh`. You can edit them as needed to change the server's behavior:
-
-- `SYNAPSE_SERVER_DOMAIN_NAME`: The domain name of the Matrix Synapse server.
-- `AWS_ACCESS_KEY_ID`: AWS access key for S3 backup.
-- `AWS_SECRET_ACCESS_KEY`: AWS secret access key for S3 backup.
-- `AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME`: Name of the S3 bucket where backups are stored.
-- `ALERT_EMAIL`: Email address to send alerts in case of backup or disk space issues.
-- `KEEP_HISTORY_FOREVER`: Set to `true` to keep message history and media files indefinitely. Set to `false` to enable retention policies.
-- `LOG_FILE`: Path to the log file where backup errors will be recorded.
-... etc
-
----
-
 ## Troubleshooting
 
 ### Common Issues
@@ -142,7 +164,10 @@ These variables are configured on the server itself via `server_config.sh`. You 
     ```bash
     journalctl -u docker.service
     ```
-- **Matrix Errors**: execute on the vm: docker logs synapse
+- **Matrix Errors**: To view logs from the Matrix Synapse container:
+    ```bash
+    docker logs synapse
+    ```
 - **Backup Errors**: Backup logs are stored in `/tmp/matrix_synapse_backup_error.log`. Check the log for details on any backup failures.
 
 ### Disk Space Alerts
