@@ -105,13 +105,17 @@ Terraform will provision a new VM on the ThreeFold Grid. After the deployment is
 
 ## Synapse Configuration
 
-After running the `setup_matrix.sh` script, Matrix Synapse will be configured automatically. The configuration includes:
+After running the `terraform apply` command, Matrix Synapse will be automatically configured with the following key components:
 
-- **SSL Setup**: The script configures NGINX with SSL to ensure secure communication.
-- **Federation**: Matrix Synapse is set up to support federation with other servers.
-- **Retention Policies**: Based on your configuration (`KEEP_HISTORY_FOREVER`), the server will either keep message history and media files indefinitely or follow the retention policies you configure.
+- **SSL Configuration**: NGINX is set up with SSL to ensure secure HTTPS communication. Ensure you have provided valid SSL certificate files during setup.
+- **Federation Support**: The server is configured to federate with other Matrix servers, enabling communication across different Matrix instances.
+- **Data Retention Policies**: Depending on your configuration (`KEEP_HISTORY_FOREVER`), the server will either retain all message history and media files indefinitely, or follow your chosen retention policies for cleaning up old data.
 
-For detailed configuration options and additional customization, refer to the official [Matrix Synapse Documentation](https://matrix-org.github.io/synapse/latest/setup/installation.html).
+### Important Notes:
+- **Domain Name and SSL**: Ensure that you have a valid domain name and SSL certificate ready for the initial setup. These are critical for securing communications and enabling federation.
+- **DNS Configuration**: Once the deployment is complete and you have the server’s IP address, update your domain's DNS settings to point to the server’s public IP to ensure your domain correctly resolves to the Synapse server.
+
+For further configuration options and more detailed setup instructions, please refer to the official [Matrix Synapse Documentation](https://matrix-org.github.io/synapse/latest/setup/installation.html).
 
 ### SSH into the VM and Configure Matrix Synapse further
 SSH into the VM using the provided IP address and run the setup script to configure Matrix Synapse if you need any changes:
