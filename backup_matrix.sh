@@ -12,7 +12,7 @@ EMAIL_BODY="The Matrix Synapse backup script encountered an error and failed to 
 send_alert() {
   LOG_CONTENT=$(tail -n 50 $LOG_FILE)  # Include the last 50 lines of the log
   echo "Sending alert email to $ALERT_EMAIL..."
-  echo -e "To: $ALERT_EMAIL\nFrom: no-reply@$SYNAPSE_SERVER_DOMAIN_NAME\nSubject: $EMAIL_SUBJECT\n\n$EMAIL_BODY\n\n$LOG_CONTENT" | ssmtp $ALERT_EMAIL
+  echo -e "To: $ALERT_EMAIL\nFrom: no-reply@$SYNAPSE_SERVER_DOMAIN_NAME\nSubject: $EMAIL_SUBJECT\n\n$EMAIL_BODY\n\n$LOG_CONTENT" | /usr/sbin/ssmtp $ALERT_EMAIL
 }
 
 # Trap errors, log the error, and send an alert if the script fails
@@ -33,7 +33,7 @@ check_disk_space() {
         DISK_ALERT_BODY="Warning: The Matrix Synapse server is running low on disk space. Less than 5% is available.\n\nCurrent disk usage: ${DISK_USAGE}%."
 
         # Send the email using ssmtp
-        echo -e "To: $ALERT_EMAIL\nFrom: no-reply@$SYNAPSE_SERVER_DOMAIN_NAME\nSubject: $DISK_ALERT_SUBJECT\n\n$DISK_ALERT_BODY" | ssmtp $ALERT_EMAIL
+        echo -e "To: $ALERT_EMAIL\nFrom: no-reply@$SYNAPSE_SERVER_DOMAIN_NAME\nSubject: $DISK_ALERT_SUBJECT\n\n$DISK_ALERT_BODY" | /usr/sbin/ssmtp $ALERT_EMAIL
 
         if [ $? -eq 0 ]; then
             echo "Disk space alert email sent successfully."
@@ -80,15 +80,15 @@ tar -czf "/tmp/$ARCHIVE_NAME" -C "/tmp" "matrix-synapse-backup-$TIMESTAMP"
 
 # Remove all but the latest backup from the S3 bucket
 echo "Cleaning old backups from S3..."
-LATEST_BACKUP=$(aws s3 ls "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/" | sort | tail -n 1 | awk '{print $4}')
-aws s3 ls "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/" | awk '{print $4}' | grep -v "$LATEST_BACKUP" | while read -r OBJECT; do
+LATEST_BACKUP=$(/usr/local/bin/aws s3 ls "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/" | sort | tail -n 1 | awk '{print $4}')
+/usr/local/bin/aws s3 ls "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/" | awk '{print $4}' | grep -v "$LATEST_BACKUP" | while read -r OBJECT; do
     echo "Deleting $OBJECT..."
-    aws s3 rm "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/$OBJECT"
+    /usr/local/bin/aws s3 rm "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/$OBJECT"
 done
 
 # Upload the new backup to S3
 echo "Uploading new backup to S3..."
-aws s3 cp "/tmp/$ARCHIVE_NAME" "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/$ARCHIVE_NAME"
+/usr/local/bin/aws s3 cp "/tmp/$ARCHIVE_NAME" "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/$ARCHIVE_NAME"
 
 # Clean up local temporary files
 echo "Cleaning up local files..."

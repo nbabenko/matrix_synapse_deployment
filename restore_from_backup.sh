@@ -45,6 +45,9 @@ rsync -a --delete "$EXTRACTED_DIR/data/" /matrix-synapse/data/
 echo "Restoring SQLite database..."
 cp "$EXTRACTED_DIR/homeserver.db" /matrix-synapse/data/homeserver.db
 
+# Set proper permissions
+chown -R 991:991 /matrix-synapse/data/homeserver.db
+
 # Start the Synapse container again
 echo "Starting Synapse container..."
 docker-compose -f /matrix-synapse/docker-compose.yml up -d

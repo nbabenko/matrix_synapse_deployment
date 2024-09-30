@@ -162,13 +162,14 @@ EOL
 # -------------------------------------
 echo "Setting up cron job for regular backups..."
 
-# Add a cron job to run backup_matrix.sh every night at 2:00 AM CET
-(crontab -l 2>/dev/null | grep -v "backup_matrix.sh"; echo "0 2 * * * CET /bin/bash /matrix-synapse/backup_matrix.sh >> $LOG_FILE 2>&1") | crontab - || echo "Failed to add cron job"
-
-echo "Cron job added. The backup will run every night at 2:00 AM CET."
-
 # Enable the NGINX configuration
 ln -s /etc/nginx/sites-available/matrix-synapse /etc/nginx/sites-enabled/
 nginx -t && service nginx restart
 
 echo -e "To: $ALERT_EMAIL\nFrom: no-reply@$SYNAPSE_SERVER_DOMAIN_NAME\nSubject: Matrix Synapse Server Setup Completed\n\nMatrix Synapse Server Setup Completed Successfully." | ssmtp $ALERT_EMAIL
+
+# Add a cron job to run backup_matrix.sh every night at 2:00 AM CET
+(crontab -l 2>/dev/null | grep -v "backup_matrix.sh"; echo "0 2 * * * echo \"Backup started at \$(date)\" >> $LOG_FILE; /bin/bash /matrix-synapse/backup_matrix.sh >> $LOG_FILE 2>&1; echo \"Backup finished at \$(date)\" >> $LOG_FILE") | crontab - || echo "Failed to add cron job"
+
+echo "Cron job added. The backup will run every night at 2:00 AM CET."
+
