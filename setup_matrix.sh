@@ -78,6 +78,9 @@ purge_jobs:
 # Retain media files indefinitely
 media_storage:
   max_lifetime_ms: 0
+
+# Increase Max upload size for the personal data
+max_upload_size: 5368709120  # 5 GB in bytes
 EOL
 else
   echo "KEEP_HISTORY_FOREVER is set to false. No changes made to homeserver.yaml for history retention."
@@ -146,6 +149,9 @@ server {
 
     ssl_certificate /matrix-synapse/data/fullchain.pem;
     ssl_certificate_key /matrix-synapse/data/tls.key;
+
+    # Allow larger file uploads
+    client_max_body_size 5G;
 
     location / {
         proxy_pass http://localhost:8008;
