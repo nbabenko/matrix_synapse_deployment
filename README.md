@@ -235,7 +235,7 @@ For more detailed instructions on user registration, refer to the official docum
 ## Backup & Restore
 
 ### Backup
-Backups are handled automatically via a cron job. The `backup_matrix.sh` script runs nightly at 2:00 AM CET and uploads backups to the configured AWS S3 bucket.
+Backups are handled automatically via a cron job. The `backup_matrix.sh` script runs nightly at 1:00 AM UTC and uploads backups to the configured AWS S3 bucket.
 
 To run the backup manually:
 ```bash
