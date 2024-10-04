@@ -33,6 +33,7 @@ Here’s a breakdown of the main files and their purposes:
 ├── config.sh                       # Configuration script for environment variables
 ├── main.tf                         # Terraform configuration for deploying the VM
 ├── restore_from_backup.sh          # Restore script for Matrix Synapse
+├── server_config.sh.example        # Example configuration for the Synapse Server
 ├── setup_matrix.sh                 # Script to set up the Matrix Synapse server and configure Docker
 ├── terraform_config.sh.example     # Example configuration for Terraform variables
 └── README.md                       # Project documentation (this file)
@@ -47,7 +48,7 @@ cd matrix-deployment
 ```
 
 ### 2. Configure Terraform Variables
-Create a configuration file by copying `terraform_config.sh.example` to `terraform_config.sh` and update the values to match your environment:
+Create a configuration file by copying `terraform_config.sh.example` to `terraform_config.sh` and `server_config.sh.example` to `server_config.sh` and update the values to match your environment:
 
 ```bash
 cp terraform_config.sh.example terraform_config.sh
@@ -66,7 +67,7 @@ Set the following variables in `terraform_config.sh`:
 - `TF_VAR_ssh_public_key_to_use`: Path to the SSH public key.
 - `TF_VAR_ssl_certificate_key_path`: Path to the SSL certificate key.
 - `TF_VAR_ssl_certificate_crt_path`: Path to the SSL certificate.
-- `TF_VAR_ssl_certificate_ca_bundle_path`: Path to the CA bundle file.
+- `TF_VAR_ssl_certificate_ca_bundle_path`: Path to the SSL CA bundle file.
 - `TF_VAR_threefold_account_memo`: ThreeFold account mnemonic.
 
 #### Server-Side Variables:
