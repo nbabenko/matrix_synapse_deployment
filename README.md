@@ -323,7 +323,7 @@ The backup script monitors disk space and sends an alert if less than 5% is free
 Contributions are welcome! Feel free to submit a pull request or open an issue for any bugs, improvements, or features.
 
 ### Guidelines:
-- Ensure all tests pass.
+- Ensure the changes are tested and works.
 - Write clear commit messages.
 - Follow the project structure and coding conventions.
 
