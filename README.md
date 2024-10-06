@@ -29,14 +29,17 @@ Here’s a breakdown of the main files and their purposes:
 
 ```
 .
-├── backup_matrix.sh                # Backup script for Matrix Synapse
-├── config.sh                       # Configuration script for environment variables
-├── main.tf                         # Terraform configuration for deploying the VM
-├── restore_from_backup.sh          # Restore script for Matrix Synapse
-├── server_config.sh.example        # Example configuration for the Synapse Server
-├── setup_matrix.sh                 # Script to set up the Matrix Synapse server and configure Docker
+├── LICENSE                         # MIT License
+├── README.md                       # Project documentation (this file)
+├── backup_matrix.sh                # Script for backing up Matrix Synapse to AWS S3
+├── config.sh                       # Script for environment configuration
+├── generate_self_signed_certificate.sh # Script to generate self-signed SSL certificates
+├── main.tf                         # Terraform configuration for deploying VM
+├── restore_from_backup.sh          # Script for restoring from AWS S3 backups
+├── server_config.sh.example        # Example configuration for Synapse server variables
+├── set_certificate_permissions.sh  # Script for setting permissions for SSL certificates
+├── setup_matrix.sh                 # Script for initial setup of Matrix Synapse
 ├── terraform_config.sh.example     # Example configuration for Terraform variables
-└── README.md                       # Project documentation (this file)
 ```
 
 ## Setup Instructions
@@ -65,9 +68,10 @@ Set the following variables in `terraform_config.sh`:
 - `TF_VAR_storage`: Disk storage (in MB).
 - `TF_VAR_ssh_private_key_to_use`: Path to the SSH private key.
 - `TF_VAR_ssh_public_key_to_use`: Path to the SSH public key.
-- `TF_VAR_ssl_certificate_key_path`: Path to the SSL certificate key.
-- `TF_VAR_ssl_certificate_crt_path`: Path to the SSL certificate.
-- `TF_VAR_ssl_certificate_ca_bundle_path`: Path to the SSL CA bundle file.
+- `TF_VAR_use_self_signed_ssl`:  Set to 'true' to use a self-signed SSL certificate. If this is set to true, you can ignore the following two parameters
+- `TF_VAR_ssl_certificate_key_path`: Path to the paid SSL certificate key if you decide to use paid one.
+- `TF_VAR_ssl_certificate_crt_path`: Path to the paid SSL certificate if you decide to use paid one.
+- `TF_VAR_ssl_certificate_ca_bundle_path`: Path to the paid SSL CA bundle file if you decide to use paid one.
 - `TF_VAR_threefold_account_memo`: ThreeFold account mnemonic.
 
 #### Server-Side Variables:
@@ -88,6 +92,8 @@ These variables are configured on the server via `server_config.sh` and can be m
 
 - **Logging Settings**:
   - **`LOG_FILE`**: The path to the log file where backup errors and other operational logs will be recorded. This file will help diagnose issues with backups or the system.
+
+- **`USE_SELF_SIGNED_SSL`**: Set to 'true' to use a self-signed SSL certificate
 
 ### 3. Initialize and Apply Terraform
 Initialize Terraform and apply the configuration to deploy the VM:
