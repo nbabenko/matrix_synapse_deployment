@@ -60,7 +60,7 @@ sed -i '/^listeners:/a\  - port: 8448\n    tls: true\n    bind_addresses: ["0.0.
 
 # Update TLS certificate and key paths in homeserver.yaml
 echo "Updating TLS certificate and key paths in homeserver.yaml..."
-sed -i '/^server_name:/a tls_certificate_path: "/data/fullchain.pem"\ntls_private_key_path: "/data/tls.key"' /matrix-synapse/data/homeserver.yaml
+sed -i '/^server_name:/a tls_certificate_path: "/data/certificate.crt"\ntls_private_key_path: "/data/tls.key"' /matrix-synapse/data/homeserver.yaml
 
 # Conditionally modify homeserver.yaml to keep history indefinitely
 if [ "$KEEP_HISTORY_FOREVER" = true ]; then
@@ -86,16 +86,39 @@ else
   echo "KEEP_HISTORY_FOREVER is set to false. No changes made to homeserver.yaml for history retention."
 fi
 
-# Combine server certificate and intermediate certificates to create fullchain.pem
-echo "Creating fullchain.pem by combining server and intermediate certificates..."
-cat /matrix-synapse/data/tls.crt /matrix-synapse/data/ca-bundle.ca-bundle > /matrix-synapse/data/fullchain.pem
+# Conditionally modify homeserver.yaml to keep history indefinitely
+if [ "$USE_SELF_SIGNED_SSL" = true ]; then
+  echo "Installing Certbot to automatically obtain and renew SSL certificates..."
+  apt-get install -y certbot python3-certbot-nginx
 
-# Ensure correct permissions on TLS certificate, key, and fullchain.pem
-echo "Setting permissions on TLS certificate, key, and fullchain.pem..."
-chmod 644 /matrix-synapse/data/fullchain.pem
-chmod 600 /matrix-synapse/data/tls.key
-chown 991:991 /matrix-synapse/data/fullchain.pem
-chown 991:991 /matrix-synapse/data/tls.key
+  echo "Configuring temporary NGINX for Let's Encrypt challenge..."
+  cat <<EOL > /etc/nginx/sites-available/letsencrypt
+server { 
+  listen 80; server_name ${SYNAPSE_SERVER_DOMAIN_NAME};
+  location /.well-known/acme-challenge/ {
+      root /var/www/html;
+  }
+  location / {
+      return 404;
+  }
+}
+EOL
+
+  ln -s /etc/nginx/sites-available/letsencrypt /etc/nginx/sites-enabled/
+  
+  echo "Restarting nginx"
+  nginx -t && (pgrep nginx > /dev/null && nginx -s reload || nginx)
+  echo "Nginx restarted."
+
+  /bin/bash /matrix-synapse/generate_self_signed_certificate.sh
+
+else
+  # Combine server certificate and intermediate certificates to create fullchain certificate
+  echo "Creating fullchain certificate by combining server and intermediate certificates..."
+  cat /matrix-synapse/data/tls.crt /matrix-synapse/data/ca-bundle.ca-bundle > /matrix-synapse/data/certificate.crt
+fi
+
+/bin/bash /matrix-synapse/set_certificate_permissions.sh
 
 # Create Docker Compose file for Synapse with host networking
 echo "Writing Docker Compose configuration..."
@@ -147,7 +170,7 @@ server {
     listen 443 ssl;
     server_name ${SYNAPSE_SERVER_DOMAIN_NAME};
 
-    ssl_certificate /matrix-synapse/data/fullchain.pem;
+    ssl_certificate /matrix-synapse/data/certificate.crt;
     ssl_certificate_key /matrix-synapse/data/tls.key;
 
     # Allow larger file uploads
@@ -163,19 +186,29 @@ server {
 }
 EOL
 
-# -------------------------------------
-# Setup cron job for regular backups
-# -------------------------------------
-echo "Setting up cron job for regular backups..."
+if [ "$USE_SELF_SIGNED_SSL" = true ]; then
+    if [ -f /etc/nginx/sites-enabled/letsencrypt ]; then
+      rm /etc/nginx/sites-enabled/letsencrypt
+    fi
+
+    # Add a cron job to regenerate the SSL certificate every 2 months at 1:00 AM UTC
+    echo "Setting up a cron job for regular SSL certificate regeneration..."
+    (crontab -l 2>/dev/null | grep -v "/bin/bash /matrix-synapse/generate_self_signed_certificate.sh"; echo "0 3 1 */2 * echo \"Certificate generation started at \$(date)\" >> $LOG_FILE; /bin/bash /matrix-synapse/generate_self_signed_certificate.sh >> $LOG_FILE 2>&1; if [ \$? -eq 0 ]; then echo \"Certificate successfully renewed on \$(date)\" >> $LOG_FILE; echo -e \"To: $ALERT_EMAIL\nFrom: no-reply@$SYNAPSE_SERVER_DOMAIN_NAME\nSubject: Certificate successfully renewed\n\nThe SSL certificate was successfully renewed on \$(date).\" | ssmtp $ALERT_EMAIL; else echo \"Error renewing the SSL certificate on \$(date)\" >> $LOG_FILE; echo -e \"To: $ALERT_EMAIL\nFrom: no-reply@$SYNAPSE_SERVER_DOMAIN_NAME\nSubject: Error renewing the SSL certificate\n\nError renewing the SSL certificate on \$(date). Please check the Synapse server.\" | ssmtp $ALERT_EMAIL; fi") | crontab - || echo "Failed to add the cron job"
+fi
 
 # Enable the NGINX configuration
 ln -s /etc/nginx/sites-available/matrix-synapse /etc/nginx/sites-enabled/
-nginx -t && service nginx restart
+# Reload NGINX
+echo "Restarting nginx"
+nginx -t && (pgrep nginx > /dev/null && nginx -s reload || nginx)
+echo "Nginx restarted."
+
+echo "Setting up cron job for regular backups..."
+
+# Add a cron job to run backup_matrix.sh every night at 1:00 AM UTC
+(crontab -l 2>/dev/null | grep -v "backup_matrix.sh"; echo "0 1 * * * echo \"Backup started at \$(date)\" >> $LOG_FILE; /bin/bash /matrix-synapse/backup_matrix.sh >> $LOG_FILE 2>&1; echo \"Backup finished at \$(date)\" >> $LOG_FILE") | crontab - || echo "Failed to add cron job"
 
 echo -e "To: $ALERT_EMAIL\nFrom: no-reply@$SYNAPSE_SERVER_DOMAIN_NAME\nSubject: Matrix Synapse Server Setup Completed\n\nMatrix Synapse Server Setup Completed Successfully." | ssmtp $ALERT_EMAIL
-
-# Add a cron job to run backup_matrix.sh every night at 2:00 AM CET
-(crontab -l 2>/dev/null | grep -v "backup_matrix.sh"; echo "0 1 * * * echo \"Backup started at \$(date)\" >> $LOG_FILE; /bin/bash /matrix-synapse/backup_matrix.sh >> $LOG_FILE 2>&1; echo \"Backup finished at \$(date)\" >> $LOG_FILE") | crontab - || echo "Failed to add cron job"
 
 service cron start
 

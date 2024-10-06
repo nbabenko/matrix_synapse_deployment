@@ -21,6 +21,7 @@ export TF_VAR_ssh_private_key_to_use="~/.ssh/id_rsa"    # Path to your SSH priva
 export TF_VAR_ssh_public_key_to_use="~/.ssh/id_rsa.pub" # Path to your SSH public key (used for remote access to the VM)
 
 # --- SSL Certificate Configuration ---
+export TF_VAR_use_self_signed_ssl=true  # Set to 'true' to use a self-signed SSL certificate and ignore parameters below
 export TF_VAR_ssl_certificate_key_path="path/to/your/ssl-certificate.key"    # Path to the SSL certificate key file (for HTTPS configuration)
 export TF_VAR_ssl_certificate_crt_path="path/to/your/ssl-certificate.crt"    # Path to the SSL certificate file (the public cert for HTTPS)
 export TF_VAR_ssl_certificate_ca_bundle_path="path/to/your/ca-bundle.ca-bundle"  # Path to the CA bundle file (chain of trusted certificate authorities)

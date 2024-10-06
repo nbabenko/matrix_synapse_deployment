@@ -26,6 +26,8 @@ export MAILHUB="smtp.gmail.com:587"                   # SMTP server for email se
 # --- Log File Location ---
 export LOG_FILE="/tmp/matrix_synapse_backup_error.log"  # Path to the log file for backup error logging
 
+export USE_SELF_SIGNED_SSL=true   # Set to 'true' to use a self-signed SSL certificate
+
 # --- Security Note ---
 # Ensure this file is not tracked by Git or made public, as it contains sensitive credentials.
 # You can use .gitignore to prevent committing this file.

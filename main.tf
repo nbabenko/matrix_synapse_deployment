@@ -42,6 +42,11 @@ variable "ssh_public_key_to_use" {
   type        = string
 }
 
+variable "use_self_signed_ssl" {
+  description = "Whether to use Let's Encrypt for SSL certificates"
+  type        = bool
+}
+
 variable "ssl_certificate_key_path" {
   description = "Path to the SSL certificate key file"
   type        = string
@@ -93,7 +98,7 @@ resource "grid_deployment" "matrix_vm" {
   }
 }
 
-resource "null_resource" "post_deployment" {
+resource "null_resource" "post_deployment_file_prepare" {
   depends_on = [grid_deployment.matrix_vm]
 
   connection {
@@ -109,6 +114,49 @@ resource "null_resource" "post_deployment" {
       "mkdir -p /matrix-synapse/data",
       "mkdir -p /tmp"
     ]
+  }
+
+  provisioner "file" {
+    source      = "server_config.sh"
+    destination = "/matrix-synapse/server_config.sh"
+  }
+
+  provisioner "file" {
+    source      = "restore_from_backup.sh"
+    destination = "/matrix-synapse/restore_from_backup.sh"
+  }
+
+  provisioner "file" {
+    source      = "backup_matrix.sh"
+    destination = "/matrix-synapse/backup_matrix.sh"
+  }
+
+  provisioner "file" {
+    source      = "generate_self_signed_certificate.sh"
+    destination = "/matrix-synapse/generate_self_signed_certificate.sh"
+  }
+
+  provisioner "file" {
+    source      = "set_certificate_permissions.sh"
+    destination = "/matrix-synapse/set_certificate_permissions.sh"
+  }
+
+  # Copy the shell script to the VM
+  provisioner "file" {
+    source      = "setup_matrix.sh"
+    destination = "/tmp/setup_matrix.sh"
+  }
+}
+
+resource "null_resource" "post_deployment_ssl_copy" {
+  depends_on = [null_resource.post_deployment_file_prepare]
+  count = var.use_self_signed_ssl ? 0 : 1
+
+  connection {
+    type        = "ssh"
+    user        = "root"
+    private_key = file(var.ssh_private_key_to_use)
+    host        = replace(grid_deployment.matrix_vm.vms[0].computedip, "/25", "")
   }
 
   # Copy the SSL certificate and secret files to the VM
@@ -127,25 +175,17 @@ resource "null_resource" "post_deployment" {
     destination = "/matrix-synapse/data/ca-bundle.ca-bundle"
   }
 
-  provisioner "file" {
-    source      = "server_config.sh"
-    destination = "/matrix-synapse/server_config.sh"
-  }
 
-  provisioner "file" {
-    source      = "restore_from_backup.sh"
-    destination = "/matrix-synapse/restore_from_backup.sh"
-  }
+}
 
-  provisioner "file" {
-    source      = "backup_matrix.sh"
-    destination = "/matrix-synapse/backup_matrix.sh"
-  }
+resource "null_resource" "post_deployment_execute" {
+  depends_on = [null_resource.post_deployment_ssl_copy]
 
-  # Copy the shell script to the VM
-  provisioner "file" {
-    source      = "setup_matrix.sh"
-    destination = "/tmp/setup_matrix.sh"
+  connection {
+    type        = "ssh"
+    user        = "root"
+    private_key = file(var.ssh_private_key_to_use)
+    host        = replace(grid_deployment.matrix_vm.vms[0].computedip, "/25", "")
   }
 
   provisioner "remote-exec" {
