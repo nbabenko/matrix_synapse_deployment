@@ -175,11 +175,27 @@ resource "null_resource" "post_deployment_ssl_copy" {
     destination = "/matrix-synapse/data/ca-bundle.ca-bundle"
   }
 
+}
 
+resource "null_resource" "wait_for_dns_update" {
+  depends_on = [null_resource.post_deployment_ssl_copy]
+  count = var.use_self_signed_ssl ? 1 : 0  # Only execute when use_self_signed_ssl is true
+
+  provisioner "local-exec" {
+    command = <<EOT
+      echo "Please update your DNS settings and add an A record for the IP: $(terraform output -raw vm_ip_address)"
+      echo "Once you have updated the DNS, create a file named 'continue.txt' in the current directory."
+      while [ ! -f continue.txt ]; do
+        echo "Waiting for 'continue.txt' file. Please create the file when done updating DNS to A record for the IP: $(terraform output -raw vm_ip_address)."
+        sleep 10
+      done
+      echo "DNS settings confirmed. Proceeding..."
+    EOT
+  }
 }
 
 resource "null_resource" "post_deployment_execute" {
-  depends_on = [null_resource.post_deployment_ssl_copy]
+  depends_on = [null_resource.wait_for_dns_update]
 
   connection {
     type        = "ssh"
