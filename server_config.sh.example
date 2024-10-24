@@ -18,6 +18,7 @@ export AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME="your-bucket-name"  # S3 bucket where b
 export AWS_BUCKET_REGION="eu-central-1" # AWS region for your bucket
 
 export BACKUP_ENCRYPTION_PASSWORD="your_encryption_password" # Backup encryption password.
+export TURN_SHARED_SECRET="random_password" # Turn server shared secret. Generate random.
 
 # --- Data Retention Configuration ---
 export KEEP_HISTORY_FOREVER=true                      # Set to 'false' if you want to enable data retention policies for purging old messages/media

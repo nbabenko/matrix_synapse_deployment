@@ -21,7 +21,26 @@ fi
 echo "Updating package list and installing Docker, Curl, Rsync, and Vim..."
 apt-get update -y
 apt-get upgrade -y
-apt-get install -y docker.io curl rsync vim unzip cron nginx ssmtp restic jq
+apt-get install -y docker.io curl rsync vim unzip cron nginx ssmtp restic jq coturn ufw
+
+# Configure UFW firewall settings
+echo "Configuring UFW firewall to allow necessary ports and deny others..."
+ufw default deny incoming
+ufw default allow outgoing
+
+# Allow SSH (port 22)
+ufw allow 22/tcp
+
+# Allow HTTP (port 80) and HTTPS (port 443) for web traffic
+ufw allow 80/tcp
+ufw allow 443/tcp
+
+# Allow Synapse HTTP and Federation ports (8008 and 8448)
+ufw allow 8008/tcp
+ufw allow 8448/tcp
+
+# Enable UFW
+ufw --force enable
 
 # Start Docker service
 echo "Starting Docker service..."
@@ -91,6 +110,7 @@ media_storage:
 
 # Increase Max upload size for the personal data
 max_upload_size: 5368709120  # 5 GB in bytes
+
 EOL
 else
   echo "KEEP_HISTORY_FOREVER is set to false. No changes made to homeserver.yaml for history retention."
@@ -129,6 +149,8 @@ else
 fi
 
 /bin/bash /matrix-synapse/set_certificate_permissions.sh
+
+/bin/bash /matrix-synapse/setup_coturn.sh
 
 # Create Docker Compose file for Synapse with host networking
 echo "Writing Docker Compose configuration..."

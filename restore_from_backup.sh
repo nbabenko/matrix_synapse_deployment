@@ -68,6 +68,10 @@ if [ $? -ne 0 ]; then
 fi
 echo "Data directory restored successfully."
 
+# Copy the SQLite database back into the container
+echo "Restoring SQLite database..."
+cp "$EXTRACTED_DIR/homeserver.db.backup" /matrix-synapse/data/homeserver.db
+
 # Set proper permissions on the restored data
 echo "Setting proper permissions for /matrix-synapse/data..."
 chown -R 991:991 /matrix-synapse/data

@@ -147,6 +147,11 @@ resource "null_resource" "post_deployment_file_prepare" {
   }
 
   provisioner "file" {
+    source      = "setup_coturn.sh"
+    destination = "/matrix-synapse/setup_coturn.sh"
+  }
+
+  provisioner "file" {
     source      = "set_certificate_permissions.sh"
     destination = "/matrix-synapse/set_certificate_permissions.sh"
   }
