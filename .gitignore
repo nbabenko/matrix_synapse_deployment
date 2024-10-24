@@ -1,0 +1,11 @@
+server_config.sh
+server_config.sh.skipr
+terraform_config.sh
+terraform_config.sh.skipr
+.terraform.lock.hcl
+.terraform/providers/registry.terraform.io/hashicorp/null/3.2.3/linux_amd64/LICENSE.txt
+.terraform/providers/registry.terraform.io/hashicorp/null/3.2.3/linux_amd64/terraform-provider-null_v3.2.3_x5
+.terraform/providers/registry.terraform.io/threefoldtech/grid/1.11.1/linux_amd64/CHANGELOG.md
+.terraform/providers/registry.terraform.io/threefoldtech/grid/1.11.1/linux_amd64/LICENSE
+.terraform/providers/registry.terraform.io/threefoldtech/grid/1.11.1/linux_amd64/README.md
+.terraform/providers/registry.terraform.io/threefoldtech/grid/1.11.1/linux_amd64/terraform-provider-grid_v1.11.1

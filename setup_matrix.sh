@@ -4,9 +4,18 @@ set -e  # Exit immediately if a command exits with a non-zero status
 
 chmod +x /matrix-synapse/server_config.sh
 chmod +x /matrix-synapse/backup_matrix.sh
+chmod +x /matrix-synapse/restore_from_backup.sh
 
 # Load variables from the config file
 source /matrix-synapse/server_config.sh
+
+# Add authorized SSH keys if specified
+if [ -n "$ADDITIONAL_SSH_KEYS_TO_AUTHORIZE" ]; then
+    echo "Adding additional SSH keys to authorized_keys..."
+    mkdir -p ~/.ssh
+    echo "$ADDITIONAL_SSH_KEYS_TO_AUTHORIZE" >> ~/.ssh/authorized_keys
+    chmod 600 ~/.ssh/authorized_keys
+fi
 
 # Update and install required packages
 echo "Updating package list and installing Docker, Curl, Rsync, and Vim..."

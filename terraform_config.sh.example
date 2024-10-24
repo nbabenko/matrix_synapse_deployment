@@ -12,6 +12,7 @@ export TF_VAR_node_id=317                    # Replace with the actual node ID o
 
 # --- VM Configuration ---
 export TF_VAR_vm_name="matrix_synapse_vm"    # Name of the VM (use only letters, numbers, and underscores)
+export TF_VAR_network_name="matrix_synapse_network"    # Name of the network (use only letters, numbers, and underscores)
 export TF_VAR_cpu=1                          # Number of CPU cores to allocate to the VM
 export TF_VAR_memory=2048                    # Amount of memory (in MB) to allocate to the VM
 export TF_VAR_storage=51200                  # Storage size (in MB) to allocate to the VM
@@ -19,6 +20,7 @@ export TF_VAR_storage=51200                  # Storage size (in MB) to allocate 
 # --- SSH Configuration ---
 export TF_VAR_ssh_private_key_to_use="~/.ssh/id_rsa"    # Path to your SSH private key (ensure this key has proper access)
 export TF_VAR_ssh_public_key_to_use="~/.ssh/id_rsa.pub" # Path to your SSH public key (used for remote access to the VM)
+export TF_VAR_additional_ssh_keys_to_authorise="" # Add one or multiple SSH public keys here to be authorised for SSH access to the server
 
 # --- SSL Certificate Configuration ---
 export TF_VAR_use_self_signed_ssl=true  # Set to 'true' to use a self-signed SSL certificate and ignore parameters below

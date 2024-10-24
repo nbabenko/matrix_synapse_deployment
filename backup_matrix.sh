@@ -49,22 +49,21 @@ check_disk_space() {
 check_disk_space
 
 # Variables for backup
-TIMESTAMP=$(date +%Y%m%d%H%M%S)
-BACKUP_DIR="/tmp/matrix-synapse-backup-$TIMESTAMP"
-DATA_DIR="/matrix-synapse/data"
-ARCHIVE_NAME="matrix-synapse-backup-$TIMESTAMP.tar.gz"
+BACKUP_DIR="/matrix-synapse/data"
+RESTIC_REPOSITORY="s3:s3.amazonaws.com/${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}"
+export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
+export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
 
-# Create backup directory
-mkdir -p "$BACKUP_DIR"
-
-# Copy data directory
-echo "Backing up data directory..."
-rsync -a --delete \
-  --exclude 'homeserver.db' \
-  --exclude 'homeserver.db-wal' \
-  --exclude 'homeserver.db-shm' \
-  "$DATA_DIR/" "$BACKUP_DIR/data/"
-
+# Check if encryption is required based on config
+if [ -n "$BACKUP_ENCRYPTION_PASSWORD" ]; then
+    echo "Encryption enabled for backup."
+    export RESTIC_PASSWORD="$BACKUP_ENCRYPTION_PASSWORD"
+    ENCRYPTION_FLAG=""
+else
+    echo "No encryption enabled for backup."
+    unset RESTIC_PASSWORD
+    ENCRYPTION_FLAG="--no-encryption"
+fi
 
 # Back up SQLite database using sqlite3 .backup command inside the container
 echo "Backing up SQLite database..."
@@ -72,27 +71,9 @@ docker exec synapse sqlite3 /data/homeserver.db ".backup '/data/homeserver.db.ba
 
 # Copy the SQLite backup from the container to the host
 echo "Copying the SQLite backup to the host..."
-docker cp synapse:/data/homeserver.db.backup "$BACKUP_DIR/homeserver.db"
+docker cp synapse:/data/homeserver.db.backup "$BACKUP_DIR/homeserver.db.backup"
 
-# Create a compressed archive of the backup
-echo "Creating compressed archive..."
-tar -czf "/tmp/$ARCHIVE_NAME" -C "/tmp" "matrix-synapse-backup-$TIMESTAMP"
-
-# Remove all but the latest backup from the S3 bucket
-echo "Cleaning old backups from S3..."
-LATEST_BACKUP=$(/usr/local/bin/aws s3 ls "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/" | sort | tail -n 1 | awk '{print $4}')
-/usr/local/bin/aws s3 ls "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/" | awk '{print $4}' | grep -v "$LATEST_BACKUP" | while read -r OBJECT; do
-    echo "Deleting $OBJECT..."
-    /usr/local/bin/aws s3 rm "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/$OBJECT"
-done
-
-# Upload the new backup to S3
-echo "Uploading new backup to S3..."
-/usr/local/bin/aws s3 cp "/tmp/$ARCHIVE_NAME" "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/$ARCHIVE_NAME"
-
-# Clean up local temporary files
-echo "Cleaning up local files..."
-rm -rf "$BACKUP_DIR"
-rm "/tmp/$ARCHIVE_NAME"
-
+# Perform the backup using Restic, including the database backup
+echo "Starting backup with Restic..."
+restic -r "$RESTIC_REPOSITORY" backup "$BACKUP_DIR" --tag "synapse-backup" --verbose --exclude "$BACKUP_DIR/homeserver.db" --exclude "$BACKUP_DIR/homeserver.db-wal" --exclude "$BACKUP_DIR/homeserver.db-shm" $ENCRYPTION_FLAG
 echo "Backup completed successfully."

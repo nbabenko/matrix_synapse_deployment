@@ -63,6 +63,7 @@ Set the following variables in `terraform_config.sh`:
 
 - `TF_VAR_node_id`: ID of the ThreeFold Grid node where the VM will be deployed.
 - `TF_VAR_vm_name`: Name for the Matrix Synapse VM.
+- `TF_VAR_network_name`: Name for the Matrix Synapse threefold network.
 - `TF_VAR_cpu`: Number of CPU cores for the VM.
 - `TF_VAR_memory`: Amount of memory (in MB).
 - `TF_VAR_storage`: Disk storage (in MB).
@@ -77,11 +78,13 @@ Set the following variables in `terraform_config.sh`:
 #### Server-Side Variables:
 These variables are configured on the server via `server_config.sh` and can be modified to customize the server's behavior, including backup configurations, email alerts, and logging.
 - **`SYNAPSE_SERVER_DOMAIN_NAME`**: The domain name of the Matrix Synapse server. This will be used for server identification, SSL configuration, and federation with other Matrix servers.
+- **`ADDITIONAL_SSH_KEYS_TO_AUTHORIZE`**: Add one or multiple SSH public keys here to be authorized for SSH access to the server.
   
 - **AWS S3 Backup Settings**: For set up instructions see [Setting up AWS S3](#setting-up-aws-s3)
   - **`AWS_ACCESS_KEY_ID`**: Your AWS access key for authentication when interacting with S3 for backups. 
   - **`AWS_SECRET_ACCESS_KEY`**: Your AWS secret access key for secure access to S3. 
   - **`AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME`**: The name of the S3 bucket where Synapse backups will be stored. 
+  - **`BACKUP_ENCRYPTION_PASSWORD`**: Backup encryption password. Leave empty for no encryption of backup. 
 - **Data Retention Settings**:
   - **`KEEP_HISTORY_FOREVER`**: Set this to `true` if you want to retain all message history and media files indefinitely. Set it to `false` to enable the server’s retention policies, which will periodically clean up old messages and media.
 - **Email Alert Settings**:

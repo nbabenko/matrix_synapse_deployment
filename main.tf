@@ -17,6 +17,11 @@ variable "vm_name" {
   type        = string
 }
 
+variable "network_name" {
+  description = "Name of the network to be created"
+  type        = string
+}
+
 variable "cpu" {
   description = "Number of CPU cores for the VM"
   type        = number
@@ -73,7 +78,7 @@ provider "grid" {
 }
 
 resource "grid_network" "matrix_network" {
-  name     = "matrixnetwork"
+  name     = var.network_name
   ip_range = "10.0.0.0/16"
   nodes    = [var.node_id]  
 }

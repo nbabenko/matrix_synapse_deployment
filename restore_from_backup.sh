@@ -6,59 +6,65 @@ set -e
 source /matrix-synapse/server_config.sh
 
 RESTORE_DIR="/tmp/matrix-synapse-restore"
+RESTIC_REPOSITORY="s3:s3.amazonaws.com/${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}"
+export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
+export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
 
-# Find the latest backup in S3
+# Check if encryption is required based on config
+if [ -n "$BACKUP_ENCRYPTION_PASSWORD" ]; then
+    echo "Encryption enabled for restore."
+    export RESTIC_PASSWORD="$BACKUP_ENCRYPTION_PASSWORD"
+    ENCRYPTION_FLAG=""
+else
+    echo "No encryption enabled for restore."
+    unset RESTIC_PASSWORD
+    ENCRYPTION_FLAG="--no-encryption"
+fi
+
+# Find the latest backup in the Restic repository
 echo "Finding the latest backup..."
-LATEST_BACKUP=$(aws s3 ls "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/" | sort | tail -n 1 | awk '{print $4}')
+LATEST_SNAPSHOT=$(restic -r "$RESTIC_REPOSITORY" snapshots --tag "synapse-backup" --json | jq -r 'sort_by(.time) | last(.[]).short_id')
 
 # Check if any backups are available
-if [ -z "$LATEST_BACKUP" ]; then
-    echo "No backups found in S3."
+if [ -z "$LATEST_SNAPSHOT" ]; then
+    echo "No backups found in Restic repository."
     exit 1
 fi
 
-echo "Latest backup found: $LATEST_BACKUP"
+echo "Latest backup snapshot found: $LATEST_SNAPSHOT"
 
 # Create restore directory
 mkdir -p "$RESTORE_DIR"
 
-# Download the latest backup from S3
-echo "Downloading the latest backup from S3..."
-aws s3 cp "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}/$LATEST_BACKUP" "$RESTORE_DIR/$LATEST_BACKUP"
-
-# Extract the backup
-echo "Extracting the backup..."
-tar -xzf "$RESTORE_DIR/$LATEST_BACKUP" -C "$RESTORE_DIR"
+# Restore the latest backup using Restic
+echo "Restoring the latest backup from Restic..."
+restic -r "$RESTIC_REPOSITORY" restore "$LATEST_SNAPSHOT" --target "$RESTORE_DIR" $ENCRYPTION_FLAG
 
 # Stop Synapse to prevent corruption during restore
 echo "Stopping Synapse..."
 docker-compose -f /matrix-synapse/docker-compose.yml down
 
-# Dynamically find the extracted folder (assuming it is created under $RESTORE_DIR)
-EXTRACTED_DIR=$(find "$RESTORE_DIR" -mindepth 1 -maxdepth 1 -type d | head -n 1)
+# Dynamically find the restored data directory
+EXTRACTED_DIR="$RESTORE_DIR/matrix-synapse/data"
 
 # Restore data directory
 echo "Restoring data directory..."
-rsync -a --delete "$EXTRACTED_DIR/data/" /matrix-synapse/data/
-
-# Copy the SQLite database back into the container
-echo "Restoring SQLite database..."
-cp "$EXTRACTED_DIR/homeserver.db" /matrix-synapse/data/homeserver.db
+rsync -a --delete "$EXTRACTED_DIR/" /matrix-synapse/data/
 
 # Set proper permissions
-chown -R 991:991 /matrix-synapse/data/homeserver.db
+chown -R 991:991 /matrix-synapse/data
 
 # Start the Synapse container again
 echo "Starting Synapse container..."
 docker-compose -f /matrix-synapse/docker-compose.yml up -d
 
-# Installing SQLite in the Synapse container for future use, same as in setup_matrix.sh
-echo "Installing SQLite in the Synapse container..."
-docker exec synapse apt-get update
-docker exec synapse apt-get install -y sqlite3
-
 # Clean up restore files
 echo "Cleaning up restore files..."
 rm -rf "$RESTORE_DIR"
 
-echo "Restore from latest backup completed successfully."
+# Clean up environment variables
+unset AWS_ACCESS_KEY_ID
+unset AWS_SECRET_ACCESS_KEY
+unset RESTIC_PASSWORD
+
+echo "Restore from the latest backup completed successfully."
