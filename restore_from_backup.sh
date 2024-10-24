@@ -10,6 +10,7 @@ RESTIC_REPOSITORY="s3:s3.amazonaws.com/${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}"
 export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
 export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
 export RESTIC_PASSWORD="$BACKUP_ENCRYPTION_PASSWORD"
+export AWS_DEFAULT_REGION="$AWS_BUCKET_REGION"
 
 # Check if the Restic repository is accessible
 echo "Verifying access to Restic repository..."

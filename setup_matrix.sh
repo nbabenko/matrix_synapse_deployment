@@ -21,7 +21,7 @@ fi
 echo "Updating package list and installing Docker, Curl, Rsync, and Vim..."
 apt-get update -y
 apt-get upgrade -y
-apt-get install -y docker.io curl rsync vim unzip cron nginx ssmtp restic jq coturn ufw
+apt-get install -y docker.io curl rsync vim unzip cron nginx ssmtp restic jq coturn ufw net-tools ntp ntpdate
 
 # Configure UFW firewall settings
 echo "Configuring UFW firewall to allow necessary ports and deny others..."

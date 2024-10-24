@@ -53,6 +53,8 @@ BACKUP_DIR="/matrix-synapse/data"
 RESTIC_REPOSITORY="s3:s3.amazonaws.com/${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}"
 export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
 export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
+export AWS_DEFAULT_REGION="eu-central-1"
+export RESTIC_PASSWORD="$BACKUP_ENCRYPTION_PASSWORD"
 
 # Test AWS CLI access to the S3 bucket
 echo "Verifying S3 bucket access with AWS CLI..."
@@ -61,8 +63,6 @@ if [ $? -ne 0 ]; then
     echo "Error: Unable to access S3 bucket. Please check IAM permissions."
     exit 1
 fi
-
-export RESTIC_PASSWORD="$BACKUP_ENCRYPTION_PASSWORD"
 
 # Check if the Restic repository is already initialized
 echo "Checking if Restic repository is initialized..."

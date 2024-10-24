@@ -45,10 +45,6 @@ tls-listening-port=5349
 external-ip=$PUBLIC_IP
 EOT
 
-# Ensure coturn service is running
-echo "Starting coturn service..."
-service coturn restart || echo "Warning: Failed to restart coturn service, please check manually."
-
 # Configure UFW to allow coturn traffic
 echo "Configuring UFW to allow coturn traffic..."
 ufw allow 3478/tcp
@@ -73,6 +69,10 @@ turn_shared_secret: "$TURN_SHARED_SECRET"
 turn_user_lifetime: "1h"
 turn_allow_guests: true
 EOT
+
+# Ensure coturn service is running
+echo "Starting coturn service..."
+service coturn restart || echo "Warning: Failed to restart coturn service, please check manually."
 
 # Summary
 echo "Coturn installation and configuration, and Synapse homeserver.yaml update completed successfully."
