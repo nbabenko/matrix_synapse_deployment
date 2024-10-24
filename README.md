@@ -84,7 +84,8 @@ These variables are configured on the server via `server_config.sh` and can be m
   - **`AWS_ACCESS_KEY_ID`**: Your AWS access key for authentication when interacting with S3 for backups. 
   - **`AWS_SECRET_ACCESS_KEY`**: Your AWS secret access key for secure access to S3. 
   - **`AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME`**: The name of the S3 bucket where Synapse backups will be stored. 
-  - **`BACKUP_ENCRYPTION_PASSWORD`**: Backup encryption password. Leave empty for no encryption of backup. 
+  - **`AWS_BUCKET_REGION`**: AWS region for your bucket. 
+  - **`BACKUP_ENCRYPTION_PASSWORD`**: Backup encryption password.
 - **Data Retention Settings**:
   - **`KEEP_HISTORY_FOREVER`**: Set this to `true` if you want to retain all message history and media files indefinitely. Set it to `false` to enable the server’s retention policies, which will periodically clean up old messages and media.
 - **Email Alert Settings**:

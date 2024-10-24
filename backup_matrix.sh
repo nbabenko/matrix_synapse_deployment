@@ -54,15 +54,28 @@ RESTIC_REPOSITORY="s3:s3.amazonaws.com/${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}"
 export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
 export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
 
-# Check if encryption is required based on config
-if [ -n "$BACKUP_ENCRYPTION_PASSWORD" ]; then
-    echo "Encryption enabled for backup."
-    export RESTIC_PASSWORD="$BACKUP_ENCRYPTION_PASSWORD"
-    ENCRYPTION_FLAG=""
+# Test AWS CLI access to the S3 bucket
+echo "Verifying S3 bucket access with AWS CLI..."
+aws s3 ls "s3://${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}" --region $AWS_BUCKET_REGION
+if [ $? -ne 0 ]; then
+    echo "Error: Unable to access S3 bucket. Please check IAM permissions."
+    exit 1
+fi
+
+export RESTIC_PASSWORD="$BACKUP_ENCRYPTION_PASSWORD"
+
+# Check if the Restic repository is already initialized
+echo "Checking if Restic repository is initialized..."
+if ! restic -r "$RESTIC_REPOSITORY" snapshots > /dev/null 2>&1; then
+    echo "Restic repository not found. Initializing..."
+    restic -r "$RESTIC_REPOSITORY" init
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to initialize Restic repository."
+        exit 1
+    fi
+    echo "Restic repository initialized successfully."
 else
-    echo "No encryption enabled for backup."
-    unset RESTIC_PASSWORD
-    ENCRYPTION_FLAG="--no-encryption"
+    echo "Restic repository already initialized."
 fi
 
 # Back up SQLite database using sqlite3 .backup command inside the container
@@ -75,5 +88,11 @@ docker cp synapse:/data/homeserver.db.backup "$BACKUP_DIR/homeserver.db.backup"
 
 # Perform the backup using Restic, including the database backup
 echo "Starting backup with Restic..."
-restic -r "$RESTIC_REPOSITORY" backup "$BACKUP_DIR" --tag "synapse-backup" --verbose --exclude "$BACKUP_DIR/homeserver.db" --exclude "$BACKUP_DIR/homeserver.db-wal" --exclude "$BACKUP_DIR/homeserver.db-shm" $ENCRYPTION_FLAG
+restic -r "$RESTIC_REPOSITORY" backup "$BACKUP_DIR" --tag "synapse-backup" --verbose --exclude "$BACKUP_DIR/homeserver.db" --exclude "$BACKUP_DIR/homeserver.db-wal" --exclude "$BACKUP_DIR/homeserver.db-shm" 
+
+# Apply retention policy to keep only the last 3 daily snapshots
+echo "Applying retention policy to keep only the last 3 daily snapshots..."
+restic -r "$RESTIC_REPOSITORY" forget --keep-daily 3 --prune
+echo "Retention policy applied successfully."
+
 echo "Backup completed successfully."

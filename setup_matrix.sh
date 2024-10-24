@@ -20,7 +20,8 @@ fi
 # Update and install required packages
 echo "Updating package list and installing Docker, Curl, Rsync, and Vim..."
 apt-get update -y
-apt-get install -y docker.io curl rsync vim unzip cron nginx ssmtp
+apt-get upgrade -y
+apt-get install -y docker.io curl rsync vim unzip cron nginx ssmtp restic jq
 
 # Start Docker service
 echo "Starting Docker service..."
@@ -143,14 +144,8 @@ services:
     network_mode: "host"
 EOL
 
-# Start Synapse service using Docker Compose
-echo "Starting Synapse using Docker Compose..."
-cd /matrix-synapse && docker-compose up -d
-
-# Install SQLite in the Synapse container
-echo "Installing SQLite in the Synapse container..."
-docker exec synapse apt-get update
-docker exec synapse apt-get install -y sqlite3
+# Start synapse container
+/bin/bash /matrix-synapse/container_up.sh
 
 # --- SSMTP configuration ---
 echo "Setting up SSMTP configuration..."

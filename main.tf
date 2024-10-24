@@ -84,7 +84,7 @@ resource "grid_network" "matrix_network" {
 }
 
 resource "grid_deployment" "matrix_vm" {
-  name         = "matrixserver"
+  name         = var.vm_name
   node         = var.node_id 
   network_name = grid_network.matrix_network.name
 
@@ -142,6 +142,11 @@ resource "null_resource" "post_deployment_file_prepare" {
   }
 
   provisioner "file" {
+    source      = "container_up.sh"
+    destination = "/matrix-synapse/container_up.sh"
+  }
+
+  provisioner "file" {
     source      = "set_certificate_permissions.sh"
     destination = "/matrix-synapse/set_certificate_permissions.sh"
   }
@@ -188,10 +193,10 @@ resource "null_resource" "wait_for_dns_update" {
 
   provisioner "local-exec" {
     command = <<EOT
-      echo "Please update your DNS settings and add an A record for the IP: $(terraform output -raw vm_ip_address)"
+      echo "Please update your DNS settings and add an A record for the IP: $(terraform output -raw vm_ip_address) with your target server name."
       echo "Once you have updated the DNS, create a file named 'continue.txt' in the current directory."
       while [ ! -f continue.txt ]; do
-        echo "Waiting for 'continue.txt' file. Please create the file when done updating DNS to A record for the IP: $(terraform output -raw vm_ip_address)."
+        echo "Waiting for 'continue.txt' file. Please create the file when done updating DNS to A record for the IP: $(terraform output -raw vm_ip_address) with your target server name."
         sleep 10
       done
       echo "DNS settings confirmed. Proceeding..."

@@ -15,8 +15,9 @@ export ADDITIONAL_SSH_KEYS_TO_AUTHORIZE="" # Add one or multiple SSH public keys
 export AWS_ACCESS_KEY_ID="your-aws-access-key"        # AWS access key for authenticating S3 backups
 export AWS_SECRET_ACCESS_KEY="your-aws-secret-key"    # AWS secret key for securing S3 access
 export AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME="your-bucket-name"  # S3 bucket where backups will be stored
+export AWS_BUCKET_REGION="eu-central-1" # AWS region for your bucket
 
-export BACKUP_ENCRYPTION_PASSWORD="" # Backup encryption password. Leave empty for no encryption of backup. 
+export BACKUP_ENCRYPTION_PASSWORD="your_encryption_password" # Backup encryption password.
 
 # --- Data Retention Configuration ---
 export KEEP_HISTORY_FOREVER=true                      # Set to 'false' if you want to enable data retention policies for purging old messages/media

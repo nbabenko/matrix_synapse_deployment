@@ -9,3 +9,7 @@ terraform_config.sh.skipr
 .terraform/providers/registry.terraform.io/threefoldtech/grid/1.11.1/linux_amd64/LICENSE
 .terraform/providers/registry.terraform.io/threefoldtech/grid/1.11.1/linux_amd64/README.md
 .terraform/providers/registry.terraform.io/threefoldtech/grid/1.11.1/linux_amd64/terraform-provider-grid_v1.11.1
+continue.txt
+project_structure_and_contents.txt
+state.json
+terraform.tfstate

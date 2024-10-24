@@ -11,8 +11,8 @@ if [ ! -f /etc/letsencrypt/live/${SYNAPSE_SERVER_DOMAIN_NAME}/fullchain.pem ]; t
     echo "Failed to obtain SSL certificate from Let's Encrypt."
     exit 1
 fi
-cp -L /etc/letsencrypt/live/matrix.mytrunk.org/fullchain.pem /matrix-synapse/data/certificate.crt
-cp -L /etc/letsencrypt/live/matrix.mytrunk.org/privkey.pem /matrix-synapse/data/tls.key
+cp -L /etc/letsencrypt/live/${SYNAPSE_SERVER_DOMAIN_NAME}/fullchain.pem /matrix-synapse/data/certificate.crt
+cp -L /etc/letsencrypt/live/${SYNAPSE_SERVER_DOMAIN_NAME}/privkey.pem /matrix-synapse/data/tls.key
 
 echo "SSL certificate successfully generated."
 
