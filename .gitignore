@@ -13,3 +13,7 @@ continue.txt
 project_structure_and_contents.txt
 state.json
 terraform.tfstate
+matrix_babenko_link.ca-bundle
+matrix_babenko_link.crt
+matrix.babenko.link.csr
+matrix.babenko.link.key
