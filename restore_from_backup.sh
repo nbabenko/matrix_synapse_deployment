@@ -62,7 +62,7 @@ fi
 
 # Restore data directory
 echo "Restoring data directory from $EXTRACTED_DIR to /matrix-synapse/data/..."
-rsync -a --delete "$EXTRACTED_DIR/" /matrix-synapse/data/
+rsync -a "$EXTRACTED_DIR/" /matrix-synapse/data/
 if [ $? -ne 0 ]; then
     echo "Error: Failed to copy restored data to target directory."
     exit 1

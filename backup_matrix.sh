@@ -23,10 +23,10 @@ check_disk_space() {
     # Define the threshold for free disk space (in percentage)
     THRESHOLD=5
 
-    # Get the current disk usage for the root (/) partition
+     # Get the current disk usage for the root (/) partition
     DISK_USAGE=$(df / | grep / | awk '{print $5}' | sed 's/%//')
 
-    # If disk usage is greater than or equal to (100 - THRESHOLD), send an alert
+        # If disk usage is greater than or equal to (100 - THRESHOLD), send an alert
     if [ "$DISK_USAGE" -ge $((100 - THRESHOLD)) ]; then
         echo "Disk space is below threshold. Sending alert email..."
         DISK_ALERT_SUBJECT="Matrix Synapse Server Disk Space Alert: Less than 5% Free"
@@ -34,7 +34,7 @@ check_disk_space() {
 
         # Send the email using ssmtp
         echo -e "To: $ALERT_EMAIL\nFrom: no-reply@$SYNAPSE_SERVER_DOMAIN_NAME\nSubject: $DISK_ALERT_SUBJECT\n\n$DISK_ALERT_BODY" | /usr/sbin/ssmtp $ALERT_EMAIL
-
+        
         if [ $? -eq 0 ]; then
             echo "Disk space alert email sent successfully."
         else
@@ -86,9 +86,9 @@ docker exec synapse sqlite3 /data/homeserver.db ".backup '/data/homeserver.db.ba
 echo "Copying the SQLite backup to the host..."
 docker cp synapse:/data/homeserver.db.backup "$BACKUP_DIR/homeserver.db.backup"
 
-# Perform the backup using Restic, including the database backup
+# Perform the backup using Restic, including only the database backup file and media_store directory
 echo "Starting backup with Restic..."
-restic -r "$RESTIC_REPOSITORY" backup "$BACKUP_DIR" --tag "synapse-backup" --verbose --exclude "$BACKUP_DIR/homeserver.db" --exclude "$BACKUP_DIR/homeserver.db-wal" --exclude "$BACKUP_DIR/homeserver.db-shm" 
+restic -r "$RESTIC_REPOSITORY" backup "$BACKUP_DIR/homeserver.db.backup" "$BACKUP_DIR/media_store" --tag "synapse-backup" --verbose
 
 # Apply retention policy to keep only the last 3 daily snapshots
 echo "Applying retention policy to keep only the last 3 daily snapshots..."
