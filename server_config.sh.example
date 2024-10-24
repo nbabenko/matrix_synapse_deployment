@@ -24,7 +24,7 @@ export KEEP_HISTORY_FOREVER=true                      # Set to 'false' if you wa
 
 # --- Email Notification Settings ---
 export ALERT_EMAIL="your-email@example.com"           # The email address to receive error or alert notifications
-export EMAIL_FROM="no-reply@your-domain.com"          # The sender email address (ensure it's valid and configured with your mail provider)
+export EMAIL_FROM="sender-mailbox@your-domain.com"          # The sender email address (ensure it's valid and configured with your mail provider)
 export EMAIL_PASSWORD="your-email-password"           # Password or app-specific password for the email account (use Gmail app passwords if applicable)
 export MAILHUB="smtp.gmail.com:587"                   # SMTP server for email sending (Gmail example provided)
 
