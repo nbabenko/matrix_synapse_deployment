@@ -228,6 +228,14 @@ resource "null_resource" "post_deployment_execute" {
   }
 }
 
+resource "null_resource" "cleanup_continue_file" {
+  depends_on = [null_resource.post_deployment_execute]
+
+  provisioner "local-exec" {
+    command = "rm -f continue.txt"
+  }
+}
+
 output "vm_ip_address" {
   value = replace(grid_deployment.matrix_vm.vms[0].computedip, "/25", "")
 }

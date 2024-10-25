@@ -17,3 +17,5 @@ matrix_babenko_link.ca-bundle
 matrix_babenko_link.crt
 matrix.babenko.link.csr
 matrix.babenko.link.key
+server_config.sh.babenko
+terraform_config.sh.babenko
