@@ -152,6 +152,11 @@ resource "null_resource" "post_deployment_file_prepare" {
   }
 
   provisioner "file" {
+    source      = "setup_signal_bridge.sh"
+    destination = "/matrix-synapse/setup_signal_bridge.sh"
+  }
+
+  provisioner "file" {
     source      = "set_certificate_permissions.sh"
     destination = "/matrix-synapse/set_certificate_permissions.sh"
   }

@@ -50,11 +50,15 @@ check_disk_space
 
 # Variables for backup
 BACKUP_DIR="/matrix-synapse/data"
+SECRETS_BACKUP_FILE="$BACKUP_DIR/synapse_secrets.backup"
 RESTIC_REPOSITORY="s3:s3.amazonaws.com/${AWS_BACKUP_ACCOUNT_S3_BUCKET_NAME}"
 export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
 export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
 export AWS_DEFAULT_REGION="$AWS_BUCKET_REGION"
 export RESTIC_PASSWORD="$BACKUP_ENCRYPTION_PASSWORD"
+
+echo "Extracting secrets from homeserver.yaml..."
+grep -E 'registration_shared_secret|macaroon_secret_key|form_secret|turn_shared_secret' /matrix-synapse/data/homeserver.yaml > "$SECRETS_BACKUP_FILE"
 
 # Test AWS CLI access to the S3 bucket
 echo "Verifying S3 bucket access with AWS CLI..."
@@ -88,11 +92,14 @@ docker cp synapse:/data/homeserver.db.backup "$BACKUP_DIR/homeserver.db.backup"
 
 # Perform the backup using Restic, including only the database backup file and media_store directory
 echo "Starting backup with Restic..."
-restic -r "$RESTIC_REPOSITORY" backup "$BACKUP_DIR/homeserver.db.backup" "$BACKUP_DIR/media_store" --tag "synapse-backup" --verbose
+restic -r "$RESTIC_REPOSITORY" backup "$BACKUP_DIR/homeserver.db.backup" "$BACKUP_DIR/media_store" "$SECRETS_BACKUP_FILE" --tag "synapse-backup" --verbose
 
 # Apply retention policy to keep only the last 3 daily snapshots
 echo "Applying retention policy to keep only the last 3 daily snapshots..."
 restic -r "$RESTIC_REPOSITORY" forget --keep-daily 3 --prune
 echo "Retention policy applied successfully."
+
+# Cleanup temporary secrets file
+rm -f "$SECRETS_BACKUP_FILE"
 
 echo "Backup completed successfully."

@@ -166,6 +166,9 @@ services:
     network_mode: "host"
 EOL
 
+# Setup signal bridge
+/bin/bash /matrix-synapse/setup_signal_bridge.sh
+
 # Start synapse container
 /bin/bash /matrix-synapse/container_up.sh
 

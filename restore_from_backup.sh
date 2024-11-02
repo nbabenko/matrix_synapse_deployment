@@ -69,9 +69,25 @@ if [ $? -ne 0 ]; then
 fi
 echo "Data directory restored successfully."
 
-# Copy the SQLite database back into the container
+# Restore SQLite database
 echo "Restoring SQLite database..."
 cp "$EXTRACTED_DIR/homeserver.db.backup" /matrix-synapse/data/homeserver.db
+
+# Restore secrets from the backup, replacing any existing values in homeserver.yaml
+SECRETS_BACKUP_FILE="$EXTRACTED_DIR/synapse_secrets.backup"
+if [ -f "$SECRETS_BACKUP_FILE" ]; then
+    echo "Restoring secrets from $SECRETS_BACKUP_FILE to homeserver.yaml..."
+
+    # Use sed to replace secrets in homeserver.yaml with those in the backup file
+    sed -i -e "/^registration_shared_secret:/d" \
+           -e "/^macaroon_secret_key:/d" \
+           -e "/^form_secret:/d" \
+           -e "/^turn_shared_secret:/d" /matrix-synapse/data/homeserver.yaml
+
+    cat "$SECRETS_BACKUP_FILE" >> /matrix-synapse/data/homeserver.yaml
+else
+    echo "Warning: Secrets backup file not found. Skipping secrets restoration."
+fi
 
 # Set proper permissions on the restored data
 echo "Setting proper permissions for /matrix-synapse/data..."
