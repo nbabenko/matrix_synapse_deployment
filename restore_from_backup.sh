@@ -19,9 +19,9 @@ if ! restic -r "$RESTIC_REPOSITORY" snapshots > /dev/null 2>&1; then
     exit 1
 fi
 
-# Find the latest backup in the Restic repository
-echo "Finding the latest backup snapshot..."
-LATEST_SNAPSHOT=$(restic -r "$RESTIC_REPOSITORY" snapshots --tag "synapse-backup" --json | jq -r 'max_by(.time) | .short_id')
+# Find the latest backup in the Restic repository using both tags
+echo "Finding the latest backup snapshot for $SYNAPSE_SERVER_DOMAIN_NAME..."
+LATEST_SNAPSHOT=$(restic -r "$RESTIC_REPOSITORY" snapshots --tag "$SYNAPSE_SERVER_DOMAIN_NAME" --json | jq -r 'max_by(.time) | .short_id')
 
 # Check if any backups are available
 if [ -z "$LATEST_SNAPSHOT" ]; then
@@ -43,13 +43,13 @@ if [ $? -ne 0 ]; then
 fi
 echo "Restore completed successfully to $RESTORE_DIR."
 
-# Stop Synapse to prevent corruption during restore
-echo "Stopping Synapse..."
+# Stop Synapse and Signal bridge to prevent corruption during restore
+echo "Stopping Synapse container..."
 docker-compose -f /matrix-synapse/docker-compose.yml down
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to stop Synapse. Please check Docker services."
-    exit 1
-fi
+
+echo "Stopping Signal bridge container..."
+docker stop mautrix-signal || true
+docker rm mautrix-signal || true
 
 # Dynamically find the restored data directory (typically under the restore directory)
 EXTRACTED_DIR="$RESTORE_DIR/matrix-synapse/data"
@@ -69,15 +69,15 @@ if [ $? -ne 0 ]; then
 fi
 echo "Data directory restored successfully."
 
-# Restore SQLite database
-echo "Restoring SQLite database..."
+# Restore SQLite database for Synapse
+echo "Restoring Synapse SQLite database..."
 cp "$EXTRACTED_DIR/homeserver.db.backup" /matrix-synapse/data/homeserver.db
 
-# Restore secrets from the backup, replacing any existing values in homeserver.yaml
+# Restore secrets for Synapse from the backup, replacing any existing values in homeserver.yaml
 SECRETS_BACKUP_FILE="$EXTRACTED_DIR/synapse_secrets.backup"
 if [ -f "$SECRETS_BACKUP_FILE" ]; then
-    echo "Restoring secrets from $SECRETS_BACKUP_FILE to homeserver.yaml..."
-
+    echo "Restoring Synapse secrets from $SECRETS_BACKUP_FILE to homeserver.yaml..."
+    
     # Use sed to replace secrets in homeserver.yaml with those in the backup file
     sed -i -e "/^registration_shared_secret:/d" \
            -e "/^macaroon_secret_key:/d" \
@@ -86,7 +86,32 @@ if [ -f "$SECRETS_BACKUP_FILE" ]; then
 
     cat "$SECRETS_BACKUP_FILE" >> /matrix-synapse/data/homeserver.yaml
 else
-    echo "Warning: Secrets backup file not found. Skipping secrets restoration."
+    echo "Warning: Synapse secrets backup file not found. Skipping secrets restoration."
+fi
+
+# Restore Signal bridge database
+SIGNAL_BRIDGE_DB_BACKUP="$EXTRACTED_DIR/mautrix_signal.db.backup"
+SIGNAL_BRIDGE_DB="/matrix-synapse/mautrix-signal/mautrix_signal.db"
+if [ -f "$SIGNAL_BRIDGE_DB_BACKUP" ]; then
+    echo "Restoring Signal bridge database..."
+    cp "$SIGNAL_BRIDGE_DB_BACKUP" "$SIGNAL_BRIDGE_DB"
+else
+    echo "Warning: Signal bridge database backup file not found. Skipping Signal bridge database restoration."
+fi
+
+# Restore Signal bridge secrets
+SIGNAL_BRIDGE_SECRETS_BACKUP="$EXTRACTED_DIR/signal_secrets.backup"
+SIGNAL_BRIDGE_CONFIG="/matrix-synapse/mautrix-signal/config.yaml"
+if [ -f "$SIGNAL_BRIDGE_SECRETS_BACKUP" ]; then
+    echo "Restoring Signal bridge secrets from $SIGNAL_BRIDGE_SECRETS_BACKUP to config.yaml..."
+    
+    # Use sed to remove existing tokens and replace them with restored secrets
+    sed -i -e "/^as_token:/d" \
+           -e "/^hs_token:/d" "$SIGNAL_BRIDGE_CONFIG"
+
+    cat "$SIGNAL_BRIDGE_SECRETS_BACKUP" >> "$SIGNAL_BRIDGE_CONFIG"
+else
+    echo "Warning: Signal bridge secrets backup file not found. Skipping Signal bridge secrets restoration."
 fi
 
 # Set proper permissions on the restored data
@@ -97,7 +122,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Start the Synapse container again
+# Start the Synapse container
 echo "Starting Synapse container..."
 docker-compose -f /matrix-synapse/docker-compose.yml up -d
 if [ $? -ne 0 ]; then
@@ -106,8 +131,11 @@ if [ $? -ne 0 ]; then
 fi
 echo "Synapse container started successfully."
 
-# Start synapse container
-/bin/bash /matrix-synapse/container_up.sh
+# Start the Signal bridge container
+echo "Starting Signal bridge container..."
+docker run -d --name mautrix-signal \
+    -v $SIGNAL_BRIDGE_DIR:/data \
+    dock.mau.dev/mautrix/signal:latest
 
 # Clean up restore files
 echo "Cleaning up restore files in $RESTORE_DIR..."

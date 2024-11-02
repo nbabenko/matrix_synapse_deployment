@@ -150,6 +150,7 @@ fi
 
 /bin/bash /matrix-synapse/set_certificate_permissions.sh
 
+# Setup Coturn server for VoIP calls
 /bin/bash /matrix-synapse/setup_coturn.sh
 
 # Create Docker Compose file for Synapse with host networking

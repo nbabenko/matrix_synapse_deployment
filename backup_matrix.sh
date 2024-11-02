@@ -23,10 +23,10 @@ check_disk_space() {
     # Define the threshold for free disk space (in percentage)
     THRESHOLD=5
 
-     # Get the current disk usage for the root (/) partition
+    # Get the current disk usage for the root (/) partition
     DISK_USAGE=$(df / | grep / | awk '{print $5}' | sed 's/%//')
 
-        # If disk usage is greater than or equal to (100 - THRESHOLD), send an alert
+    # If disk usage is greater than or equal to (100 - THRESHOLD), send an alert
     if [ "$DISK_USAGE" -ge $((100 - THRESHOLD)) ]; then
         echo "Disk space is below threshold. Sending alert email..."
         DISK_ALERT_SUBJECT="Matrix Synapse Server Disk Space Alert: Less than 5% Free"
@@ -45,6 +45,24 @@ check_disk_space() {
     fi
 }
 
+# Function to check if sqlite3 is installed in a container, and install it if missing
+ensure_sqlite3_installed() {
+    container_name=$1
+    echo "Checking if sqlite3 is installed in $container_name..."
+    if ! docker exec "$container_name" which sqlite3 > /dev/null 2>&1; then
+        echo "sqlite3 is not installed in $container_name. Installing..."
+        docker exec "$container_name" apt-get update -y
+        docker exec "$container_name" apt-get install sqlite3 -y
+        echo "sqlite3 installed successfully in $container_name."
+    else
+        echo "sqlite3 is already installed in $container_name."
+    fi
+}
+
+# Ensure sqlite3 is installed in Synapse and Signal bridge containers
+ensure_sqlite3_installed synapse
+ensure_sqlite3_installed mautrix-signal
+
 # Check disk space before proceeding with the backup
 check_disk_space
 
@@ -59,6 +77,20 @@ export RESTIC_PASSWORD="$BACKUP_ENCRYPTION_PASSWORD"
 
 echo "Extracting secrets from homeserver.yaml..."
 grep -E 'registration_shared_secret|macaroon_secret_key|form_secret|turn_shared_secret' /matrix-synapse/data/homeserver.yaml > "$SECRETS_BACKUP_FILE"
+
+# Signal bridge backup variables
+SIGNAL_BRIDGE_DIR="/matrix-synapse/mautrix-signal"
+SIGNAL_BRIDGE_DB="$SIGNAL_BRIDGE_DIR/mautrix_signal.db"
+SIGNAL_BRIDGE_DB_BACKUP="$SIGNAL_BRIDGE_DIR/mautrix_signal.db.backup"
+SIGNAL_BRIDGE_SECRETS="$SIGNAL_BRIDGE_DIR/signal_secrets.backup"
+
+# Extract Signal bridge secrets
+echo "Extracting Signal bridge secrets..."
+grep -E 'as_token|hs_token' "$SIGNAL_BRIDGE_DIR/config.yaml" > "$SIGNAL_BRIDGE_SECRETS"
+
+# Create a safe backup of the Signal bridge database
+echo "Backing up Signal bridge database..."
+docker exec mautrix-signal sqlite3 "$SIGNAL_BRIDGE_DB" ".backup '$SIGNAL_BRIDGE_DB_BACKUP'"
 
 # Test AWS CLI access to the S3 bucket
 echo "Verifying S3 bucket access with AWS CLI..."
@@ -90,9 +122,16 @@ docker exec synapse sqlite3 /data/homeserver.db ".backup '/data/homeserver.db.ba
 echo "Copying the SQLite backup to the host..."
 docker cp synapse:/data/homeserver.db.backup "$BACKUP_DIR/homeserver.db.backup"
 
-# Perform the backup using Restic, including only the database backup file and media_store directory
+# Perform the backup using Restic, including Synapse database, media_store, Signal bridge database, and Signal bridge secrets
 echo "Starting backup with Restic..."
-restic -r "$RESTIC_REPOSITORY" backup "$BACKUP_DIR/homeserver.db.backup" "$BACKUP_DIR/media_store" "$SECRETS_BACKUP_FILE" --tag "synapse-backup" --verbose
+restic -r "$RESTIC_REPOSITORY" backup \
+    "$BACKUP_DIR/homeserver.db.backup" \
+    "$BACKUP_DIR/media_store" \
+    "$SECRETS_BACKUP_FILE" \
+    "$SIGNAL_BRIDGE_DB_BACKUP" \
+    "$SIGNAL_BRIDGE_SECRETS" \
+    --tag "$SYNAPSE_SERVER_DOMAIN_NAME" \
+    --verbose
 
 # Apply retention policy to keep only the last 3 daily snapshots
 echo "Applying retention policy to keep only the last 3 daily snapshots..."
@@ -101,5 +140,7 @@ echo "Retention policy applied successfully."
 
 # Cleanup temporary secrets file
 rm -f "$SECRETS_BACKUP_FILE"
+rm -f "$SIGNAL_BRIDGE_SECRETS"
+rm -f "$SIGNAL_BRIDGE_DB_BACKUP"
 
 echo "Backup completed successfully."

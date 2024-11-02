@@ -6,8 +6,3 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 echo "Synapse container started successfully."
-
-# Install SQLite in the Synapse container
-echo "Installing SQLite in the Synapse container..."
-docker exec synapse apt-get update
-docker exec synapse apt-get install -y sqlite3
