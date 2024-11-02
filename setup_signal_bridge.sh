@@ -2,7 +2,7 @@
 
 # Define directories
 SIGNAL_BRIDGE_DIR="/matrix-synapse/mautrix-signal"
-APP_SERVICE_DIR="/matrix-synapse/appservices"
+APP_SERVICE_DIR="/matrix-synapse/data/appservices"
 
 # Create necessary directories
 mkdir -p $SIGNAL_BRIDGE_DIR
@@ -32,16 +32,16 @@ bridge:
 EOL
 fi
 
-# Generate the registration.yaml file if it doesn’t exist
-if [ ! -f $SIGNAL_BRIDGE_DIR/registration.yaml ]; then
-  echo "Generating Signal bridge registration.yaml..."
-  docker run --rm -v $SIGNAL_BRIDGE_DIR:/data dock.mau.dev/mautrix/signal:latest /usr/bin/mautrix-signal -g
-fi
+# Generate the registration.yaml file
+echo "Generating Signal bridge registration.yaml..."
+docker run --rm -v $SIGNAL_BRIDGE_DIR:/data dock.mau.dev/mautrix/signal:latest /usr/bin/mautrix-signal -g
 
 # Move registration.yaml to the appservices directory if not already there
 if [ -f $SIGNAL_BRIDGE_DIR/registration.yaml ]; then
   echo "Moving registration.yaml to appservices directory..."
-  mv -f $SIGNAL_BRIDGE_DIR/registration.yaml $APP_SERVICE_DIR/
+  mv -f $SIGNAL_BRIDGE_DIR/registration.yaml $APP_SERVICE_DIR/signal-registration.yaml
+  chmod 644 $APP_SERVICE_DIR/signal-registration.yaml
+  chown 991:991 $APP_SERVICE_DIR/signal-registration.yaml
 else
   echo "Error: registration.yaml was not generated as expected."
   exit 1
@@ -54,8 +54,8 @@ if ! grep -q "app_service_config_files:" /matrix-synapse/data/homeserver.yaml; t
 fi
 
 # Add the Signal bridge registration file to app_service_config_files if not already added
-if ! grep -q "/matrix-synapse/appservices/registration.yaml" /matrix-synapse/data/homeserver.yaml; then
-  echo "  - /matrix-synapse/appservices/registration.yaml" >> /matrix-synapse/data/homeserver.yaml
+if ! grep -q "/data/appservices/signal-registration.yaml" /matrix-synapse/data/homeserver.yaml; then
+  echo "  - /data/appservices/signal-registration.yaml" >> /matrix-synapse/data/homeserver.yaml
 fi
 
 # Start the Signal bridge container
